@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JDBP (JepDaeri_BizPlatform)</title>
+  <meta name="description" content="영업기획팀 의뢰 접수부터 신용관리팀 AI 시뮬레이션, 부서간 협의 및 전자결재 품의까지 한눈에 운영하는 통합 플랫폼" />
+
+  <!-- Pretendard & JB우리캐피탈 Official Design Typography -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
+
+  <!-- Tailwind CSS CDN with JB우리캐피탈 Brand Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Pretendard', '"Malgun Gothic"', '맑은 고딕', 'Apple SD Gothic Neo', 'sans-serif'],
+            mono: ['Consolas', 'Courier New', 'monospace']
+          },
+          fontSize: {
+            '2xs': ['8pt', { lineHeight: '1.3' }],
+            'xs': ['9pt', { lineHeight: '1.4' }],       // 부속 설명/태그/배지: 9pt
+            'sm': ['10pt', { lineHeight: '1.5' }],      // 기본 폰트: 10pt
+            'base': ['10pt', { lineHeight: '1.5' }],    // 기본 폰트: 10pt
+            'md': ['12pt', { lineHeight: '1.4' }],      // 소제목: 12pt (+2pt)
+            'lg': ['12pt', { lineHeight: '1.4' }],      // 소제목: 12pt (+2pt)
+            'xl': ['14pt', { lineHeight: '1.35' }],     // 중제목: 14pt (+2pt)
+            '2xl': ['16pt', { lineHeight: '1.3' }],     // 대제목: 16pt (+2pt)
+            '3xl': ['18pt', { lineHeight: '1.25' }],    // 최상단/지표: 18pt (+2pt)
+            '4xl': ['20pt', { lineHeight: '1.2' }],
+          },
+          colors: {
+            jb: {
+              50: '#EEF5FF',
+              100: '#DCEBFF',
+              200: '#B8D7FF',
+              500: '#0565F0',       /* JB우리캐피탈 시그니처 블루 */
+              600: '#0452C7',       /* JB우리캐피탈 블루 Hover */
+              700: '#033FA1',
+              navy: '#0B1B33',      /* JB우리캐피탈 프리미엄 다크 네이비 GNB */
+              navyDark: '#071324',
+              red: '#E5493A',       /* JB우리캐피탈 경고/긴급 레드 */
+              black: '#212529',     /* JB우리캐피탈 본문 텍스트 */
+              sub: '#767676',       /* JB우리캐피탈 보조 텍스트 */
+              gray: '#F4F6F9',      /* JB우리캐피탈 배경 라이트 그레이 */
+              border: '#E6E8EB',    /* JB우리캐피탈 라인 컬러 */
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ==========================================================================
+       JB우리캐피탈 Design Tokens (from https://www.wooricap.com/assets/css/jb-common.css)
+       ========================================================================== */
+    :root {
+      --primaryBlack: #212529;   /* 본문 텍스트 */
+      --primaryWhite: #FFFFFF;
+      --primaryBlue: #0565F0;    /* JB우리캐피탈 시그니처 블루 */
+      --primaryBlueHover: #0452C7;
+      --primaryBlueLight: #EEF5FF;
+      --primaryNavy: #0B1B33;    /* JB우리캐피탈 다크 네이비 헤더 */
+      --primaryRed: #E5493A;     /* 긴급/연체 지표 레드 */
+      --defaultBtnTxt: #464A4D;  /* 라인형 버튼 텍스트 */
+      --subTxt: #767676;         /* 웹접근성 준수 보조 텍스트 */
+      --formTxt: #9B9B9B;        /* 플레이스홀더 */
+      --borderColor: #E6E8EB;    /* JB우리캐피탈 카드/보더 라인 */
+      --bgLight: #F4F6F9;        /* 배경 라이트 그레이 */
+    }
+
+    * {
+      font-family: Pretendard, "Malgun Gothic", "맑은 고딕", Apple SD Gothic Neo, sans-serif !important;
+      word-break: keep-all;
+    }
+
+    html, body {
+      background-color: var(--bgLight);
+      color: var(--primaryBlack);
+      font-family: Pretendard, "Malgun Gothic", "맑은 고딕", Apple SD Gothic Neo, sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      font-size: 10pt;
+      line-height: 1.5;
+    }
+
+    /* 기본 폰트 10pt: 본문, 입력창, 버튼, 테이블 셀 */
+    input, select, textarea, button, table, p, td, label {
+      font-size: 10pt;
+      color: var(--primaryBlack);
+    }
+
+    /* 2pt 단계별 제목 스케일 */
+    /* 소제목 (Sub-headings / 표 헤더): 12pt (+2pt) */
+    h4, th, .text-subheading {
+      font-size: 12pt !important;
+      font-weight: 700;
+    }
+
+    /* 중제목 (Section Titles / 카드 타이틀): 14pt (+2pt) */
+    h3, .text-section-title {
+      font-size: 14pt !important;
+      font-weight: 700;
+    }
+
+    /* 대제목 (Page Titles / 문서 타이틀): 16pt (+2pt) */
+    h2, .text-page-title {
+      font-size: 16pt !important;
+      font-weight: 800;
+    }
+
+    /* 최상단 메인 타이틀: 18pt (+2pt) */
+    h1, .text-main-title {
+      font-size: 18pt !important;
+      font-weight: 800;
+    }
+
+    /* JB우리캐피탈 스타일 폼 컨트롤 */
+    input, select, textarea {
+      border: 1.5px solid var(--borderColor);
+      background-color: #FFFFFF;
+      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primaryBlue) !important;
+      box-shadow: 0 0 0 3px rgba(5, 101, 240, 0.12) !important;
+      outline: none;
+    }
+
+    /* JB우리캐피탈 스타일 카드 섀도우 */
+    .jb-card {
+      background-color: #FFFFFF;
+      border: 1.5px solid var(--borderColor);
+      border-radius: 1rem;
+      box-shadow: 0 2px 8px rgba(11, 27, 51, 0.04);
+    }
+
+    /* JB우리캐피탈 스타일 버튼 */
+    .btn-jb-primary {
+      background-color: var(--primaryBlue);
+      border: 1.5px solid var(--primaryBlue);
+      color: #FFFFFF;
+      font-weight: 700;
+      border-radius: 0.75rem;
+      transition: all 0.15s ease-in-out;
+      box-shadow: 0 3px 8px rgba(5, 101, 240, 0.2);
+    }
+    .btn-jb-primary:hover {
+      background-color: var(--primaryBlueHover);
+      border-color: var(--primaryBlueHover);
+    }
+
+    .btn-jb-line {
+      border: 1.5px solid var(--primaryBlue);
+      color: var(--primaryBlue);
+      background-color: #FFFFFF;
+      font-weight: 700;
+      border-radius: 0.75rem;
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-jb-line:hover {
+      background-color: var(--primaryBlueLight);
+    }
+
+    .btn-jb-secondary {
+      background-color: #F2F5F7;
+      border: 1.5px solid var(--borderColor);
+      color: var(--primaryBlack);
+      font-weight: 600;
+      border-radius: 0.75rem;
+      transition: all 0.15s ease-in-out;
+    }
+    .btn-jb-secondary:hover {
+      background-color: #E6EBF0;
+    }
+
+    /* Clean Smooth Scrollbars */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #EAEFF5;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #B6C3D1;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #879BB0;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Red Digital Seal Animation */
+    @keyframes sealStamp {
+      0% {
+        transform: scale(2.2) rotate(18deg);
+        opacity: 0;
+      }
+
+      70% {
+        transform: scale(0.92) rotate(8deg);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1) rotate(8deg);
+        opacity: 1;
+      }
+    }
+
+    .animate-seal {
+      animation: sealStamp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-[#F1F5F9] text-slate-900 selection:bg-blue-600 selection:text-white">
+  <!-- Root Mounting Container -->
+  <div id="app-root" class="min-h-screen flex flex-col"></div>
+
+  <!-- Interactive Logic Engine -->
+  <script src="./app.js"></script>
+</body>
+
+</html>
