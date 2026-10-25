@@ -13,11 +13,10 @@ const ACCOUNTS = {
     roleLabel: '영업기획팀 최기획 대리',
     avatar: '최',
     avatarBg: 'bg-amber-600',
-    allowedTabs: ['taskList', 'request', 'collaboration'],
+    allowedTabs: ['taskList', 'collaboration'],
     tabTitles: {
       taskList: { num: '목록', tag: '업무현황', title: '진행 업무 목록 (To-Do)' },
-      request: { num: 1, tag: '영업기획팀', title: '업무요건 의뢰서 작성' },
-      collaboration: { num: 2, tag: '다자간 협의', title: '부서간 협의 (AI 시뮬레이션 & 토의)' },
+      collaboration: { num: 1, tag: '다자간 협의', title: '부서간 협의 (AI 시뮬레이션 & 토의)' },
     },
     defaultTab: 'taskList',
   },
@@ -28,12 +27,11 @@ const ACCOUNTS = {
     roleLabel: '신용관리팀 이신용 대리',
     avatar: '이',
     avatarBg: 'bg-blue-600',
-    allowedTabs: ['taskList', 'request', 'collaboration', 'approval'],
+    allowedTabs: ['taskList', 'collaboration', 'approval'],
     tabTitles: {
       taskList: { num: '목록', tag: '업무현황', title: '진행 업무 목록 (To-Do)' },
-      request: { num: 1, tag: '영업기획팀', title: '업무요건 접수 (AI 최적안 분석완료)' },
-      collaboration: { num: 2, tag: '다자간 협의', title: '부서간 협의 (AI 시뮬레이션 & 토의)' },
-      approval: { num: '초안', tag: '협의완료', title: '심사전략 품의서 초안' },
+      collaboration: { num: 1, tag: '다자간 협의', title: '부서간 협의 (AI 시뮬레이션 & 토의)' },
+      approval: { num: 2, tag: '협의완료', title: '심사전략 품의서 초안' },
     },
     defaultTab: 'taskList',
   },
@@ -47,7 +45,7 @@ const ACCOUNTS = {
     allowedTabs: ['taskList', 'collaboration'],
     tabTitles: {
       taskList: { num: '목록', tag: '업무현황', title: '진행 업무 목록 (To-Do)' },
-      collaboration: { num: 1, tag: '다자간 협의', title: '부서간 협의 (AI 시뮬레이션 & 토의)' },
+      collaboration: { num: 1, tag: '다자간 협의', title: '부서간 협의 (검토 및 의견 제시)' },
     },
     defaultTab: 'taskList',
   },
@@ -61,7 +59,7 @@ const ACCOUNTS = {
     allowedTabs: ['taskList', 'collaboration'],
     tabTitles: {
       taskList: { num: '목록', tag: '업무현황', title: '진행 업무 목록 (To-Do)' },
-      collaboration: { num: 1, tag: '다자간 협의', title: '전 부서 합의 현황' },
+      collaboration: { num: 1, tag: '다자간 협의', title: '부서간 협의 (본부 검토의견·지시)' },
     },
     defaultTab: 'taskList',
   },
@@ -69,15 +67,19 @@ const ACCOUNTS = {
 
 // Application Central Store
 const state = {
-  currentRoleId: 'CREDIT_STAFF', // Default to 신용관리팀 담당자 (이신용 대리)
-  currentTab: 'taskList', // 첫 화면은 진행 업무 목록 (To-Do)
+  currentRoleId: 'SALES_STAFF', // Default to 영업기획팀 담당자 (최기획 대리)
+  currentTab: 'taskList', // 첫 화면은 진행 업무 목록 (To-Do) 복원!
   taskFilter: 'ALL', // ALL, STEP1, STEP2, STEP3
   selectedTaskId: 'REQ-2026-1011-042',
   isAccountMenuOpen: false, // 계정 전환 메뉴 팝오버 상태
+  isAgendaModalOpen: false, // [신규] 협의 안건 작성 전용 팝업 모달 상태
+  isMonthlyMonitoringModalOpen: false, // [신규] 월 정기 모니터링 발굴 안건 전용 팝업 모달 상태
+  isRuleMonitoringModalOpen: false, // [신규] 분석 기준관리(규제·제외 관리) 전용 팝업 모달 상태
   isMobileModalOpen: false, // 모바일 접속 QR/URL 안내 모달
   isAgreed: false,
   isSubmitted: false,
   docNumber: 'JB-CR-2026-1011-042',
+  collabSegChartMetric: 'combo', // SEG 분포 차트 탭: 'combo', 'ratio', 'delinquency', 'profit'
 
   // 상세 검색 조건 (등록일자, 진행상태 다중선택 콤보박스, 내 처리 대기건)
   searchFilter: {
@@ -170,10 +172,10 @@ const state = {
       status: 'submitted',
       goalText: '취급액 500억 달성 / 청년층 우대 DSR 45% 허용',
       actionInfo: {
-        SALES_STAFF: { actionName: '📝 의뢰서 보완/확인', targetTab: 'request', isMyAction: false, desc: '신용관리팀 접수 대기 중' },
-        CREDIT_STAFF: { actionName: '📥 업무요건 의뢰 접수 처리하기', targetTab: 'request', isMyAction: true, desc: '영업기획팀 의뢰 요건 확인 ➔ 신용관리팀 접수 처리 필요' },
-        CREDIT_LEADER: { actionName: '접수 대기', targetTab: 'request', isMyAction: false, desc: '신용관리팀 담당자 접수 처리 대기' },
-        RISK_HEAD: { actionName: '의뢰 현황 조회', targetTab: 'request', isMyAction: false, desc: '초기 요건 검토 중' },
+        SALES_STAFF: { actionName: '⏳ 상대방 접수 대기', targetTab: 'collaboration', isMyAction: false, desc: '신용관리팀 접수 대기 중' },
+        CREDIT_STAFF: { actionName: '📥 협의 안건 접수 처리하기', targetTab: 'collaboration', isMyAction: true, desc: '영업기획팀 상정 안건 확인 ➔ 다자간 협의에서 접수 처리' },
+        CREDIT_LEADER: { actionName: '접수 대기', targetTab: 'collaboration', isMyAction: false, desc: '신용관리팀 담당자 접수 처리 대기' },
+        RISK_HEAD: { actionName: '안건 조회', targetTab: 'collaboration', isMyAction: false, desc: '초기 요건 검토 중' },
       }
     },
     {
@@ -1254,12 +1256,8 @@ function switchAccount(roleId) {
   state.currentRoleId = roleId;
   state.isAccountMenuOpen = false;
   state.taskFilter = 'ALL';
+  state.currentTab = 'taskList'; // 계정 변경 시에도 첫 화면은 진행 업무 목록(taskList)에서 시작
   const account = ACCOUNTS[roleId];
-  
-  // 현재 탭이 변경된 계정의 허용 탭 목록에 없으면 기본 탭으로 자동 이동
-  if (!account.allowedTabs.includes(state.currentTab)) {
-    state.currentTab = account.defaultTab;
-  }
 
   // 선택된 안건이 해당 계정에서 처리 화면에 도달하지 않은 안건이면, 도달한 첫 안건으로 자동 전환
   const reachableTasks = state.tasks.filter(t => isTaskVisibleForRole(t, roleId));
@@ -1281,6 +1279,22 @@ function toggleAccountMenu(event) {
 
 // 탭 이동
 function switchTab(tab) {
+  // [월 정기 모니터링] 메뉴 요청 시 전용 팝업 모달로 오픈
+  if (tab === 'monthlyMonitoring') {
+    openMonthlyMonitoringModal();
+    return;
+  }
+
+  // [분석 기준관리 (규제·제외 관리)] 메뉴 요청 시 전용 팝업 모달로 오픈
+  if (tab === 'ruleMonitoring') {
+    if (state.currentRoleId !== 'CREDIT_STAFF') {
+      showToast('분석 기준관리(규제·제외 관리) 메뉴는 신용관리팀 담당자 전용 기능입니다.', 'info');
+      return;
+    }
+    openRuleMonitoringModal();
+    return;
+  }
+
   const account = ACCOUNTS[state.currentRoleId];
   // 5 참고정보 변수 사전 메뉴 제거
   if (tab === 'dictionary') {
@@ -1300,16 +1314,8 @@ function switchTab(tab) {
     }
   }
 
-  // 1단계 안건의 경우, 신용관리팀 담당자가 1단계(업무요건 접수)에서 [접수 처리]를 완료해야 2단계(다자간 부서협의)로 이동 가능
-  if (tab === 'collaboration' || tab === 'approval') {
-    const currentTask = state.tasks.find(t => t.id === state.selectedTaskId);
-    if (currentTask && currentTask.stepNum === 1) {
-      showToast('해당 안건은 아직 [업무요건 접수] 처리가 되지 않았습니다. 1단계에서 [접수 처리]를 먼저 완료해 주세요.', 'info');
-      state.currentTab = 'request';
-      renderApp();
-      return;
-    }
-  }
+  // 상대 부서는 협의 안건 작성 화면을 거치지 않고 다자간 협의(collaboration) 화면에서 바로 접수 가능
+
 
   if (!account.allowedTabs.includes(tab)) {
     showToast(`현재 [${account.dept} ${account.name}] 계정에서는 접근 권한이 없는 메뉴입니다.`, 'info');
@@ -1320,7 +1326,7 @@ function switchTab(tab) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// 안건 선택 및 파이프라인 이동
+// 안건 선택 및 화면 이동 (이미 상정된 안건은 상대 부서 접수 및 토의를 위해 무조건 'collaboration' 다자간 협의 화면으로 직행!)
 function selectTask(taskId, targetTab) {
   state.selectedTaskId = taskId;
   const task = state.tasks.find(t => t.id === taskId);
@@ -1334,43 +1340,83 @@ function selectTask(taskId, targetTab) {
     state.taskRequest.urgency = task.urgency;
     state.isAgreed = task.status === 'agreed';
   }
-  if (targetTab) {
-    switchTab(targetTab);
-  } else if (task) {
-    if (task.stepNum === 1) switchTab('request');
-    else if (task.stepNum === 2) switchTab('discovery');
-    else if (task.stepNum === 3) {
-      if (task.status === 'agreed' && state.currentRoleId === 'CREDIT_STAFF') {
-        switchTab('approval');
-      } else {
-        switchTab('collaboration');
-      }
-    }
+
+  // 사용자의 핵심 요건: 상대 부서는 협의 안건 작성 화면을 거치지 않고, 다자간 협의 화면에서 바로 접수할 수 있게 함!
+  if (targetTab === 'approval') {
+    switchTab('approval');
+  } else {
+    // 안건 접수 대기 또는 협의 진행 중인 모든 안건은 다자간 협의 화면으로 직행!
+    switchTab('collaboration');
   }
 }
 
-// 신규 업무요건 의뢰서 작성 시작
+// 신규 협의 안건 작성 시작 (업무 목록에서 신규 작성 버튼 클릭 시에만 진입)
 function createNewTaskRequest() {
-  const currentAcc = ACCOUNTS[state.currentRoleId];
+  const currentAcc = ACCOUNTS[state.currentRoleId] || ACCOUNTS.SALES_STAFF;
+  const isSalesUser = currentAcc.dept.includes('영업');
+  const requesterDept = isSalesUser ? '영업기획팀' : '신용관리팀';
+  const requesterName = currentAcc.name;
+  const assigneeDept = isSalesUser ? '신용관리팀' : '영업기획팀';
+  const assigneeName = isSalesUser ? '이신용 대리' : '최기획 대리';
+
   state.taskRequest = {
     id: `REQ-2026-1011-${Math.floor(Math.random() * 800 + 100)}`,
-    title: '[신규] ',
-    requesterDept: currentAcc.dept,
-    requesterName: currentAcc.name,
-    requestDate: '2026-10-11 11:40',
+    title: isSalesUser ? '[취급확대] 신규 심사완화 협의 안건' : '[리스크선제방어] 신규 심사강화 협의 안건',
+    requesterDept: requesterDept,
+    requesterName: requesterName,
+    requestDate: new Date().toISOString().split('T')[0] + ' 10:00',
     urgency: '보통',
     targetProduct: 'PL 신용대출 36개월물',
-    targetMetric: 'delinquency',
-    maxApprovalDrop: 5.0,
+    targetMetric: isSalesUser ? 'profit' : 'delinquency',
+    maxApprovalDrop: 4.2,
     minSampleSize: 1.0,
     backgroundReason: '',
-    assignedTo: '신용관리팀 이신용 대리',
+    assignedTo: `${assigneeDept} ${assigneeName}`,
+    direction: isSalesUser ? 'SALES_TO_CREDIT' : 'CREDIT_TO_SALES',
     status: 'draft',
   };
   state.isAiPreAnalyzing = false;
   state.showAssigneeAlert = false;
-  switchTab('request');
-  showToast('신규 심사전략 업무요건 의뢰서 작성을 시작합니다.', 'info');
+  state.isAgendaModalOpen = true; // [사용자 요청] 팝업 모달로 열기!
+  renderApp();
+  showToast(`[${requesterDept}]의 신규 협의 안건 작성 팝업이 열렸습니다.`, 'info');
+}
+
+// [신규] 안건 작성 모달 열기/닫기 제어기
+function openAgendaModal() {
+  state.isAgendaModalOpen = true;
+  renderApp();
+}
+
+function closeAgendaModal() {
+  state.isAgendaModalOpen = false;
+  renderApp();
+}
+
+// [신규] 월 정기 모니터링 팝업 모달 제어기
+function openMonthlyMonitoringModal() {
+  state.isMonthlyMonitoringModalOpen = true;
+  renderApp();
+}
+
+function closeMonthlyMonitoringModal() {
+  state.isMonthlyMonitoringModalOpen = false;
+  renderApp();
+}
+
+// [신규] 분석 기준관리(규제·제외 관리) 팝업 모달 제어기
+function openRuleMonitoringModal() {
+  if (state.currentRoleId !== 'CREDIT_STAFF') {
+    showToast('분석 기준관리(규제·제외 관리)은 신용관리팀 담당자 전용 기능입니다.', 'info');
+    return;
+  }
+  state.isRuleMonitoringModalOpen = true;
+  renderApp();
+}
+
+function closeRuleMonitoringModal() {
+  state.isRuleMonitoringModalOpen = false;
+  renderApp();
 }
 
 // 업무 목록 필터 변경 (전체, 1단계, 2단계, 3단계)
@@ -1482,51 +1528,99 @@ function copyMobileUrlToClipboard() {
   }
 }
 
-// 1. 영업기획팀: 업무요건 의뢰서 제출 (신용관리팀 배정)
-function submitTaskRequest() {
-  state.taskRequest.status = 'submitted';
+// 협의 안건 기안 방향 전환 함수 (영업기획팀 ➔ 신용관리팀 vs 신용관리팀 ➔ 영업기획팀)
+function setProposalDirection(direction) {
+  state.taskRequest.direction = direction;
+  const isCreditToSales = direction === 'CREDIT_TO_SALES';
 
-  // 업무 목록에도 1단계(접수 대기) 상태로 등록/반영
-  const existing = state.tasks.find(t => t.id === state.taskRequest.id);
-  if (existing) {
-    existing.title = state.taskRequest.title;
-    existing.product = state.taskRequest.targetProduct;
-    existing.stepNum = 1;
-    existing.status = 'submitted';
-    existing.stepBadge = '1단계: 업무요건 의뢰 및 접수 (AI 최적안 분석완료)';
-    existing.actionInfo.CREDIT_STAFF = { actionName: '📥 업무요건 의뢰 접수 처리하기', targetTab: 'request', isMyAction: true, desc: '영업기획팀 의뢰 요건 확인 ➔ 신용관리팀 접수 처리 필요' };
-    existing.actionInfo.SALES_STAFF = { actionName: '📝 의뢰서 보완/확인', targetTab: 'request', isMyAction: false, desc: '신용관리팀 접수 대기 중' };
+  if (isCreditToSales) {
+    state.taskRequest.requesterDept = '신용관리팀';
+    state.taskRequest.requesterName = '이신용 대리';
+    state.taskRequest.assignedTo = '영업기획팀 최기획 대리';
+    state.taskRequest.targetMetric = 'delinquency';
+    if (!state.taskRequest.fromMonitoring) {
+      state.taskRequest.title = '[리스크 선제방어] ' + (state.taskRequest.targetProduct || 'PL 신용대출 36개월물') + ' 고위험군 심사기준 강화 제안';
+      state.taskRequest.backgroundReason = '최근 연체율 상승 추세에 따른 건전성 선제 방어 및 고위험 다중채무 차주군 심사 강화 제안 건입니다. 영업기획팀의 접수 및 완충 조건(우량 차주 예외 적용 등) 협의를 요청합니다.';
+    }
   } else {
-    state.tasks.unshift({
-      id: state.taskRequest.id,
-      title: state.taskRequest.title,
-      product: state.taskRequest.targetProduct,
-      requesterDept: state.taskRequest.requesterDept,
-      requesterName: state.taskRequest.requesterName,
-      assigneeDept: '신용관리팀',
-      assigneeName: '이신용 대리',
-      requestDate: state.taskRequest.requestDate,
-      urgency: state.taskRequest.urgency,
-      stepNum: 1,
-      stepBadge: '1단계: 업무요건 의뢰 및 접수 (AI 최적안 분석완료)',
-      status: 'submitted',
-      goalText: `승인율 ${state.taskRequest.maxApprovalDrop}%p 이내 방어`,
-      actionInfo: {
-        CREDIT_STAFF: { actionName: '📥 업무요건 의뢰 접수 처리하기', targetTab: 'request', isMyAction: true, desc: '영업기획팀 의뢰 요건 확인 ➔ 신용관리팀 접수 처리 필요' },
-        SALES_STAFF: { actionName: '📝 의뢰서 보완/확인', targetTab: 'request', isMyAction: false, desc: '신용관리팀 접수 대기 중' },
-        CREDIT_LEADER: { actionName: '접수 대기', targetTab: 'request', isMyAction: false, desc: '신용관리팀 담당자 접수 처리 대기' },
-        RISK_HEAD: { actionName: '의뢰 현황 조회', targetTab: 'request', isMyAction: false, desc: '초기 요건 검토 중' },
-      }
-    });
+    state.taskRequest.requesterDept = '영업기획팀';
+    state.taskRequest.requesterName = '최기획 대리';
+    state.taskRequest.assignedTo = '신용관리팀 이신용 대리';
+    state.taskRequest.targetMetric = 'profit';
+    if (!state.taskRequest.fromMonitoring) {
+      state.taskRequest.title = '[영업 취급확대] ' + (state.taskRequest.targetProduct || 'PL 신용대출 36개월물') + ' 우량 차주군 심사 완화 제안';
+      state.taskRequest.backgroundReason = '영업 목표 달성 및 우량 고객 유치를 위해 승인율을 방어하면서 취급을 확대할 수 있는 심사 완화 전략을 제안합니다. 신용관리팀의 접수 및 리스크 영향도 시뮬레이션 협의를 요청합니다.';
+    }
   }
-
-  state.selectedTaskId = state.taskRequest.id;
-  state.currentTab = 'taskList';
   renderApp();
-  showToast('영업기획팀의 업무 의뢰가 신용관리팀에 접수 대기로 전달되었습니다.');
+  showToast(`기안 방향이 [${state.taskRequest.requesterDept} ➔ ${state.taskRequest.assignedTo}]으로 전환되었습니다.`, 'info');
 }
 
-// 2. 신용관리팀: 업무요건 의뢰 접수 처리 핸들러 (AI 선행 분석 모듈 호출 ➔ 3~5대 최적안 도출 ➔ 2단계 다자간 부서 협의로 이동)
+// 1. 협의 안건 작성 및 공식 상정 (현재 로그인 인원 부서에서 상대방 부서로 요청 확정)
+function submitTaskRequest() {
+  const currentAccount = ACCOUNTS[state.currentRoleId] || ACCOUNTS.SALES_STAFF;
+  const isSalesUser = currentAccount.dept.includes('영업');
+  const requesterDept = isSalesUser ? '영업기획팀' : '신용관리팀';
+  const requesterName = currentAccount.name;
+  const assigneeDept = isSalesUser ? '신용관리팀' : '영업기획팀';
+  const assigneeName = isSalesUser ? '이신용 대리' : '최기획 대리';
+
+  const req = state.taskRequest;
+  req.status = 'submitted';
+  req.requesterDept = requesterDept;
+  req.requesterName = requesterName;
+  req.assignedTo = `${assigneeDept} ${assigneeName}`;
+  req.direction = isSalesUser ? 'SALES_TO_CREDIT' : 'CREDIT_TO_SALES';
+
+  // 업무 목록에도 1단계(접수 대기) 상태로 등록/반영
+  const existing = state.tasks.find(t => t.id === req.id);
+  const taskData = {
+    id: req.id,
+    title: req.title,
+    product: req.targetProduct,
+    requesterDept: requesterDept,
+    requesterName: requesterName,
+    assigneeDept: assigneeDept,
+    assigneeName: assigneeName,
+    requestDate: req.requestDate || new Date().toISOString().split('T')[0] + ' 10:00',
+    urgency: req.urgency || '보통',
+    stepNum: 1,
+    stepBadge: `1단계: ${assigneeDept} 접수 대기 중`,
+    status: 'submitted',
+    goalText: `승인율 ${req.maxApprovalDrop || 4.2}%p 이내 방어`,
+    actionInfo: {
+      CREDIT_STAFF: {
+        actionName: isSalesUser ? '📥 안건 접수 처리하기' : '⏳ 상대방 접수 대기',
+        targetTab: 'collaboration',
+        isMyAction: isSalesUser,
+        desc: isSalesUser ? '영업기획팀 상정 안건 확인 후 공식 접수 처리' : '영업기획팀의 안건 접수 대기 중'
+      },
+      SALES_STAFF: {
+        actionName: isSalesUser ? '⏳ 상대방 접수 대기' : '📥 안건 접수 처리하기',
+        targetTab: 'collaboration',
+        isMyAction: !isSalesUser,
+        desc: isSalesUser ? '신용관리팀의 안건 접수 대기 중' : '신용관리팀 상정 안건 확인 후 공식 접수 처리'
+      },
+      CREDIT_LEADER: { actionName: '접수 대기', targetTab: 'collaboration', isMyAction: false, desc: '담당자 접수 처리 대기' },
+      RISK_HEAD: { actionName: '안건 조회', targetTab: 'collaboration', isMyAction: false, desc: '상정 안건 검토 대기' },
+    }
+  };
+
+  if (existing) {
+    Object.assign(existing, taskData);
+  } else {
+    state.tasks.unshift(taskData);
+  }
+
+  state.selectedTaskId = req.id;
+  state.isAgendaModalOpen = false; // [팝업 닫기] 상정 완료 시 모달 닫기
+  // 안건 상정 후 다자간 협의 화면으로 이동하여 접수 대기 배너와 상태를 직관적으로 확인
+  state.currentTab = 'collaboration';
+  renderApp();
+  showToast(`[${requesterDept} ${requesterName}] ➔ [${assigneeDept}] 협의 안건이 공식 상정되었습니다. 상대방 부서(${assigneeDept})에서 접수 처리 후 부서간 협의가 시작됩니다.`, 'success');
+}
+
+// 2. 상대방 부서: 협의 안건 접수 처리 핸들러 (AI 선행 분석 연계 ➔ 2단계 다자간 부서 협의 시작)
 async function acceptTaskRequest(taskId) {
   const task = state.tasks.find(t => t.id === taskId) || state.tasks.find(t => t.id === state.selectedTaskId) || state.tasks[0];
   if (!task) return;
@@ -1537,14 +1631,14 @@ async function acceptTaskRequest(taskId) {
   const reqPayload = {
     taskId: task.id,
     targetProduct: task.product,
-    targetMetric: 'delinquency',
+    targetMetric: state.taskRequest.targetMetric || 'delinquency',
     constraints: {
       maxApprovalDrop: state.taskRequest.maxApprovalDrop || 3.0,
       minSampleSizeRatio: (state.taskRequest.minSampleSize || 1.0) / 100,
       ootValidationRequired: true,
     },
     backgroundReason: state.taskRequest.backgroundReason,
-    requester: { department: '영업기획팀', name: '최기획 대리' }
+    requester: { department: task.requesterDept, name: task.requesterName }
   };
 
   try {
@@ -1575,7 +1669,7 @@ async function acceptTaskRequest(taskId) {
     actionName: '💬 영업의견 조율 참여',
     targetTab: 'collaboration',
     isMyAction: true,
-    desc: '1~2등급 우량차주 예외 적용 시뮬레이션 참여'
+    desc: '우량차주 예외 및 한도 시뮬레이션 참여'
   };
   task.actionInfo.CREDIT_LEADER = {
     actionName: '📋 부서 협의안 검토',
@@ -1599,7 +1693,7 @@ async function acceptTaskRequest(taskId) {
   state.currentTab = 'collaboration';
 
   renderApp();
-  showToast(`[접수 완료] AI 에이전트 모듈이 분석한 5대 최적 전략을 수신하여 [2단계 다자간 부서 협의]로 즉시 이동합니다.`, 'success');
+  showToast(`[접수 완료] 상대방 부서(${task.assigneeDept})에서 안건을 공식 접수하였습니다. AI 에이전트의 5대 최적안을 장착하고 부서간 협의를 시작합니다!`, 'success');
 }
 
 // 신용관리팀 워크스페이스 열기
@@ -2232,6 +2326,10 @@ function renderApp() {
   const root = document.getElementById('app-root');
   if (!root) return;
 
+  if (window.JepDaeriFlow) {
+    window.JepDaeriFlow.initState(state);
+  }
+
   const currentStrat = state.strategies.find(s => s.id === state.selectedStrategyId) || state.strategies[1];
   const currentAccount = ACCOUNTS[state.currentRoleId] || ACCOUNTS.CREDIT_STAFF;
 
@@ -2240,10 +2338,28 @@ function renderApp() {
     <header class="bg-[#0B1B33] text-white border-b border-[#1C3152] sticky top-0 z-40 shadow-sm">
       <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-20">
-          <!-- Logo & Brand Title: JDBP / 젭대리 (Biz.Platform) - JB우리캐피탈 스타일 -->
+          <!-- Logo & Brand Title: JB우리캐피탈 심볼 / 젭대리 (Biz.Platform) -->
           <div class="flex items-center gap-3.5">
-            <div class="w-13 h-11 px-3 py-1.5 rounded-xl bg-[#0565F0] flex items-center justify-center text-white font-black text-xl tracking-tight border border-[#3A8BFD]/60 shadow-sm">
-              JDBP
+            <div class="w-11 h-11 rounded-xl overflow-hidden shadow-md border border-[#3A8BFD]/50 shrink-0 flex items-center justify-center bg-[#004C97]" title="JB우리캐피탈">
+              <svg class="w-full h-full" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0 0L4.99762 5.08477L9.99963 0H0Z" fill="#0090D0"/>
+                <path d="M0 10.0001L5.08456 5.00178L0 0V10.0001Z" fill="#009BD7"/>
+                <path d="M0 10.0001L9.99963 10.0007L5.00171 4.91589L0 10.0001Z" fill="#0090D0"/>
+                <path d="M4.91439 4.99784L9.99963 10.0007V0L4.91439 4.99784Z" fill="#0082C8"/>
+                <path d="M9.99963 10.0007L15.0836 5.00178L9.99963 0V10.0007Z" fill="#0070BA"/>
+                <path d="M9.99963 10.0007H19.9987L15.0009 4.91589L9.99963 10.0007Z" fill="#004C97"/>
+                <path d="M0 10.0001L4.99762 15.0848L9.99963 10.0007L0 10.0001Z" fill="#0082C8"/>
+                <path d="M0 20.0001L5.08456 15.002L0 10.0001V20.0001Z" fill="#0070BA"/>
+                <path d="M0 20.0001L9.99963 20.0007L5.00171 14.9159L0 20.0001Z" fill="#0060AE"/>
+                <path d="M4.91439 14.9982L9.99963 20.0007V10.0007L4.91439 14.9982Z" fill="#00519B"/>
+                <path d="M9.99963 10.0007L14.997 15.0848L19.9987 10.0007H9.99963Z" fill="#1D378A"/>
+                <path d="M9.99963 20.0007L15.0836 15.002L9.99963 10.0007V20.0007Z" fill="#004C97"/>
+                <path d="M9.99963 20.0007H19.9987L15.0009 14.9159L9.99963 20.0007Z" fill="#1D378A"/>
+                <path d="M14.9154 14.9982L20 20.0001V10.0001L14.9154 14.9982Z" fill="#1D378A"/>
+                <path d="M9.99963 0L14.997 5.08477L19.9987 0H9.99963Z" fill="#0060AE"/>
+                <path d="M14.9154 4.99784L20 10.0001V0L14.9154 4.99784Z" fill="#00519B"/>
+                <path d="M4.25 16.218L7.71603 19.714L13.7514 13.7183L20.0121 19.9993V12.625L13.7514 6.60938L4.25 16.218Z" fill="#FEFEFE"/>
+              </svg>
             </div>
             <div>
               <div class="flex items-center gap-2">
@@ -2338,13 +2454,13 @@ function renderApp() {
           </div>
           </div>
 
-        <!-- Role-based Dynamic Process Navigation Bar (과도한 늘어남 방지 & 반응형 최적화) -->
+        <!-- Role-based Dynamic Process Navigation Bar (이전 구성 복원 + 월모니터링 & 기준모니터링 통합) -->
         <div class="flex flex-wrap items-center gap-2 pb-3 pt-1 border-t border-slate-800/80 w-full">
           <!-- 좌측 탭 그룹: 자연스러운 너비와 패딩으로 가로로 과도하게 퍼지지 않도록 최적화 -->
           <div class="flex flex-wrap items-center gap-2">
             ${currentAccount.allowedTabs
               .filter(tabKey => {
-                if (tabKey === 'dictionary') return false; // 5. 변수 사전 메뉴 제거
+                if (tabKey === 'dictionary' || tabKey === 'request') return false;
                 if (tabKey === 'approval') {
                   const currentTask = state.tasks.find(t => t.id === state.selectedTaskId);
                   const isTaskAgreed = state.isAgreed || currentTask?.status === 'agreed';
@@ -2383,7 +2499,6 @@ function renderApp() {
     <!-- Workspace Body (최대 너비 1600px 반응형 확장) -->
     <main class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
       ${state.currentTab === 'taskList' ? renderTaskListScreen() : ''}
-      ${state.currentTab === 'request' ? renderRequestScreen() : ''}
       ${state.currentTab === 'discovery' ? renderDiscoveryScreen() : ''}
       ${state.currentTab === 'collaboration' ? renderCollaborationScreen(currentStrat) : ''}
       ${state.currentTab === 'approval' ? renderApprovalScreen(currentStrat) : ''}
@@ -2391,6 +2506,15 @@ function renderApp() {
 
     <!-- Global Toast Container -->
     <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-md pointer-events-none"></div>
+
+    <!-- [신규] 심사전략 협의 안건 작성 전용 팝업 모달 -->
+    ${state.isAgendaModalOpen ? renderAgendaModal() : ''}
+
+    <!-- [신규] 월 정기 모니터링 발굴 안건 전용 팝업 모달 -->
+    ${state.isMonthlyMonitoringModalOpen ? (window.JepDaeriFlow ? window.JepDaeriFlow.renderMonthlyMonitoringModal() : '') : ''}
+
+    <!-- [신규] 분석 기준관리 (규제·제외 관리) 전용 팝업 모달 -->
+    ${state.isRuleMonitoringModalOpen ? (window.JepDaeriFlow ? window.JepDaeriFlow.renderRuleMonitoringModal() : '') : ''}
 
     <!-- AI 선행 탐색 진행 애니메이션 모달 -->
     ${state.isAiPreAnalyzing ? renderAiPreAnalyzingModal() : ''}
@@ -2491,6 +2615,16 @@ function renderTaskListScreen() {
     return true; // 'ALL'
   });
 
+  // [사용자 요청] 안건 작성일자(requestDate) 기준 내림차순 정렬 (최신 작성일자가 최상단에 오도록 정렬)
+  filteredTasks.sort((a, b) => {
+    const timeA = a.requestDate ? new Date(a.requestDate.replace(/-/g, '/')).getTime() : 0;
+    const timeB = b.requestDate ? new Date(b.requestDate.replace(/-/g, '/')).getTime() : 0;
+    if (timeA !== timeB && !isNaN(timeA) && !isNaN(timeB)) {
+      return timeB - timeA;
+    }
+    return (b.requestDate || '').localeCompare(a.requestDate || '');
+  });
+
   return `
     <div class="space-y-6">
       <!-- 1. Top Title & Quick Action -->
@@ -2508,11 +2642,42 @@ function renderTaskListScreen() {
           </p>
         </div>
 
-        <!-- 신규 의뢰서 작성 액션 버튼 -->
-        <button type="button" onclick="createNewTaskRequest();" class="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow-lg border-2 border-blue-500 flex items-center justify-center gap-2 transform active:scale-95 transition-all shrink-0">
-          <span class="text-lg">➕</span>
-          <span>신규 업무요건 의뢰서 작성</span>
-        </button>
+        <!-- 상단 퀵 액션 버튼 그룹 (분석 기준관리 팝업 + 월 정기 모니터링 팝업 + 신규 협의 안건 작성 팝업) -->
+        <div class="flex items-center gap-2.5 shrink-0 flex-wrap">
+          <!-- 0. 분석 기준관리 (규제·제외 관리) 팝업 오픈 버튼 (월 정기 모니터링 버튼 왼쪽, 신용관리팀 담당자 전용) -->
+          ${state.currentRoleId === 'CREDIT_STAFF' ? `
+            <button
+              type="button"
+              onclick="openRuleMonitoringModal();"
+              class="px-5 py-3.5 bg-gradient-to-r from-slate-900 to-indigo-950 hover:from-slate-800 hover:to-indigo-900 text-white font-black text-xs sm:text-sm rounded-xl shadow-md border-2 border-indigo-500/60 flex items-center justify-center gap-2 transform active:scale-95 transition-all group shrink-0"
+            >
+              <span class="text-base group-hover:scale-110 transition-transform">🛡️</span>
+              <span>분석 기준관리</span>
+            </button>
+          ` : ''}
+
+          <!-- 1. 월 정기 모니터링 팝업 오픈 버튼 (신규 협의 안건 작성하기 왼쪽) -->
+          <button
+            type="button"
+            onclick="openMonthlyMonitoringModal();"
+            class="px-5 py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs sm:text-sm rounded-xl shadow-md border-2 border-slate-700 flex items-center justify-center gap-2 transform active:scale-95 transition-all group"
+          >
+            <span class="text-base group-hover:scale-110 transition-transform">📊</span>
+            <span>월 정기 모니터링</span>
+          </button>
+
+          <!-- 2. 신규 협의 안건 작성 액션 버튼 (실무자 전용) -->
+          ${(state.currentRoleId === 'SALES_STAFF' || state.currentRoleId === 'CREDIT_STAFF') ? `
+            <button
+              type="button"
+              onclick="createNewTaskRequest();"
+              class="px-5 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg border-2 border-blue-500 flex items-center justify-center gap-2 transform active:scale-95 transition-all shrink-0"
+            >
+              <span class="text-base">➕</span>
+              <span>신규 협의 안건 작성하기</span>
+            </button>
+          ` : ''}
+        </div>
       </div>
 
       <!-- 2. 안건 상세 검색조건 바 (등록일자 & 내 처리 대기 토글) -->
@@ -2555,7 +2720,25 @@ function renderTaskListScreen() {
             </div>
           </div>
 
-          <!-- 2. 내 즉시 처리 대기 건만 보기 토글 버튼 -->
+          <!-- [사용자 요청] 2. 진행 상태 콤보박스 (등록일자 바로 우측) -->
+          <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl shadow-inner">
+            <span class="font-black text-slate-700 whitespace-nowrap flex items-center gap-1">
+              <span>📌</span>
+              <span>진행 상태</span>
+            </span>
+            <select
+              id="task-status-combo"
+              onchange="setTaskFilter(this.value);"
+              class="bg-white border-2 border-slate-300 hover:border-blue-500 rounded-lg px-3 py-1 text-xs font-black text-slate-800 focus:border-blue-600 focus:outline-none shadow-sm cursor-pointer transition-colors"
+            >
+              <option value="ALL" ${state.taskFilter === 'ALL' ? 'selected' : ''}>전체 진행 상태 (${totalCount}건)</option>
+              <option value="STEP1" ${state.taskFilter === 'STEP1' ? 'selected' : ''}>1단계: 업무의뢰 · 접수 (${step1Count}건)</option>
+              <option value="STEP2" ${state.taskFilter === 'STEP2' ? 'selected' : ''}>2단계: 다자간 부서 협의 (${step2Count}건)</option>
+              <option value="AGREED_DRAFT" ${state.taskFilter === 'AGREED_DRAFT' ? 'selected' : ''}>부서 합의 완료 (품의 대상: ${agreedCount}건)</option>
+            </select>
+          </div>
+
+          <!-- 3. 내 즉시 처리 대기 건만 보기 토글 버튼 -->
           <div class="sm:ml-auto">
             <button type="button" onclick="toggleOnlyMyAction();" class="px-3.5 py-2 rounded-xl border-2 transition-all flex items-center gap-2.5 shadow-sm ${
               state.searchFilter.onlyMyAction
@@ -2570,81 +2753,6 @@ function renderTaskListScreen() {
                 ${myActionAvailableCount}건 Action
               </span>
             </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. KPI 요약 카드 4종 (전체건수 = 1단계 + 2단계 정확한 합계 일치!) -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. 전체 안건 관리 (도달 안건) -->
-        <div onclick="setTaskFilter('ALL');" class="bg-white p-5 rounded-2xl border-2 transition-all cursor-pointer select-none ${
-          state.taskFilter === 'ALL' ? 'border-blue-600 shadow-md ring-2 ring-blue-100 bg-blue-50/20' : 'border-slate-300 hover:border-slate-400'
-        }">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-black text-slate-600">전체 안건 관리 (도달 안건)</span>
-            <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full border border-slate-200">전체 합계</span>
-          </div>
-          <div class="flex items-baseline justify-between mt-2">
-            <span class="text-3xl font-black text-blue-700">${totalCount}</span>
-            <span class="text-xs font-bold text-slate-600">건 처리 대상</span>
-          </div>
-          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-bold">
-            <span class="text-blue-800">1단계(${step1Count}) + 2단계(${step2Count + agreedCount})</span>
-            <span class="${state.taskFilter === 'ALL' ? 'text-blue-600 font-black' : ''}">${state.taskFilter === 'ALL' ? '선택됨 ✓' : '전체보기'}</span>
-          </div>
-        </div>
-
-        <!-- 2. 1단계: 업무의뢰 · 접수 -->
-        <div onclick="setTaskFilter('STEP1');" class="bg-white p-5 rounded-2xl border-2 transition-all cursor-pointer select-none ${
-          state.taskFilter === 'STEP1' ? 'border-blue-600 shadow-md ring-2 ring-blue-100 bg-blue-50/20' : 'border-slate-300 hover:border-slate-400'
-        }">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-black text-slate-600">1단계: 업무의뢰 · 접수</span>
-            <span class="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-full border border-blue-200">의뢰/접수</span>
-          </div>
-          <div class="flex items-baseline justify-between mt-2">
-            <span class="text-3xl font-black text-blue-600">${step1Count}</span>
-            <span class="text-xs font-bold text-slate-600">건 요건 접수</span>
-          </div>
-          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span>요건접수 · AI 5대안 사전분석</span>
-            <span class="${state.taskFilter === 'STEP1' ? 'text-blue-600 font-black' : 'text-slate-400'}">${state.taskFilter === 'STEP1' ? '선택됨 ✓' : '선택 조회'}</span>
-          </div>
-        </div>
-
-        <!-- 3. 2단계: 다자간 부서 협의 -->
-        <div onclick="setTaskFilter('STEP2');" class="bg-white p-5 rounded-2xl border-2 transition-all cursor-pointer select-none ${
-          state.taskFilter === 'STEP2' ? 'border-amber-600 shadow-md ring-2 ring-amber-100 bg-amber-50/20' : 'border-slate-300 hover:border-slate-400'
-        }">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-black text-slate-600">2단계: 다자간 부서 협의</span>
-            <span class="text-[10px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full border border-amber-200">협의/토의</span>
-          </div>
-          <div class="flex items-baseline justify-between mt-2">
-            <span class="text-3xl font-black text-amber-600">${step2Count}</span>
-            <span class="text-xs font-bold text-slate-600">건 협의 진행 중</span>
-          </div>
-          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span>AI 시뮬레이션 & 전 부서 토의</span>
-            <span class="${state.taskFilter === 'STEP2' ? 'text-amber-600 font-black' : 'text-slate-400'}">${state.taskFilter === 'STEP2' ? '선택됨 ✓' : '선택 조회'}</span>
-          </div>
-        </div>
-
-        <!-- 4. 부서 합의 완료 (품의 초안) -->
-        <div onclick="setTaskFilter('AGREED_DRAFT');" class="bg-white p-5 rounded-2xl border-2 transition-all cursor-pointer select-none ${
-          state.taskFilter === 'AGREED_DRAFT' ? 'border-emerald-600 shadow-md ring-2 ring-emerald-100 bg-emerald-50/20' : 'border-slate-300 hover:border-slate-400'
-        }">
-          <div class="flex justify-between items-center">
-            <span class="text-xs font-black text-slate-600">부서 합의 완료 (품의 초안)</span>
-            <span class="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">합의확정</span>
-          </div>
-          <div class="flex items-baseline justify-between mt-2">
-            <span class="text-3xl font-black text-emerald-600">${agreedCount}</span>
-            <span class="text-xs font-bold text-slate-600">건 합의 완료</span>
-          </div>
-          <div class="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500 font-medium">
-            <span>심사전략 품의서 초안 대상</span>
-            <span class="${state.taskFilter === 'AGREED_DRAFT' ? 'text-emerald-600 font-black' : 'text-slate-400'}">${state.taskFilter === 'AGREED_DRAFT' ? '선택됨 ✓' : '선택 조회'}</span>
           </div>
         </div>
       </div>
@@ -2707,25 +2815,37 @@ function renderTaskListScreen() {
           const isTaskAgreed = task.status === 'agreed';
 
           return `
-            <div class="bg-white border-2 ${action.isMyAction ? 'border-blue-400 ring-2 ring-blue-100 shadow-md' : 'border-slate-300 shadow-sm'} rounded-2xl p-6 transition-all hover:border-blue-500">
-              <!-- 상단 메타 바 -->
+            <div class="bg-white border-2 ${action.isMyAction ? 'border-blue-400 ring-2 ring-blue-100 shadow-md' : 'border-slate-300 shadow-sm'} rounded-2xl p-5 sm:p-6 transition-all hover:border-blue-500">
+              <!-- 상단 메타 바 (관리번호 바로 오른쪽에 현재 진행 상태 배치) -->
               <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-xs px-2.5 py-0.5 rounded-full border ${urgencyBg}">
                     ${task.urgency}
                   </span>
                   <span class="font-mono text-xs font-black text-slate-500">관리번호: ${task.id}</span>
+                  
+                  <!-- [신규] 관리번호 오른쪽 공간: 현재 진행 상태 뱃지 -->
+                  <span class="text-xs font-black px-3 py-0.5 rounded-full border shadow-2xs ${
+                    isTaskAgreed
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : task.stepNum === 1
+                      ? 'bg-amber-100 text-amber-800 border-amber-300'
+                      : 'bg-blue-100 text-blue-800 border-blue-300'
+                  }">
+                    ${isTaskAgreed ? '🤝 부서 합의 완료' : (task.stepBadge || (task.stepNum === 1 ? '1단계: 접수 대기 중' : '2단계: 다자간 협의 진행 중'))}
+                  </span>
+
                   <span class="bg-slate-100 border border-slate-300 text-slate-700 text-xs px-2.5 py-0.5 rounded-md font-bold">
                     ${task.product}
                   </span>
-                  ${isTaskAgreed ? `
-                    <span class="bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs px-2.5 py-0.5 rounded-md font-black">
-                      🤝 부서 합의 완료
-                    </span>
-                  ` : ''}
                   ${isTaskAgreed && state.currentRoleId === 'CREDIT_STAFF' ? `
                     <span class="bg-blue-100 border border-blue-300 text-blue-800 text-xs px-2.5 py-0.5 rounded-md font-black animate-pulse">
                       📝 품의서 초안 작성 가능
+                    </span>
+                  ` : ''}
+                  ${action.isMyAction ? `
+                    <span class="bg-rose-600 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-xs animate-pulse">
+                      내 처리 필요
                     </span>
                   ` : ''}
                 </div>
@@ -2734,80 +2854,34 @@ function renderTaskListScreen() {
                 </div>
               </div>
 
-              <!-- 타이틀 및 주요 요약 -->
-              <div class="mt-4">
-                <div class="flex items-start justify-between gap-4">
-                  <div>
-                    <h3 onclick="selectTask('${task.id}');" class="text-lg sm:text-xl font-black text-slate-900 hover:text-blue-600 transition-colors cursor-pointer">
-                      ${task.title}
-                    </h3>
-                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-xs text-slate-600 font-bold">
-                      <span>🎯 <strong>개편 목표:</strong> <span class="text-blue-900 font-black">${task.goalText}</span></span>
-                      <span>👥 <strong>의뢰:</strong> ${task.requesterDept} ${task.requesterName}</span>
-                      <span>➔ <strong>담당:</strong> ${task.assigneeDept} ${task.assigneeName}</span>
-                    </div>
+              <!-- 타이틀 및 내용 (좌측) + 단계별 버튼 (오른쪽 끝 공간 배치) -->
+              <div class="mt-4 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <!-- 좌측: 제목 및 요약 내용 -->
+                <div class="flex-1 min-w-0">
+                  <h3 onclick="selectTask('${task.id}', '${action.targetTab}');" class="text-lg sm:text-xl font-black text-slate-900 hover:text-blue-600 transition-colors cursor-pointer leading-snug">
+                    ${task.title}
+                  </h3>
+                  <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2.5 text-xs text-slate-600 font-bold">
+                    <span>🎯 <strong>개편 목표:</strong> <span class="text-blue-900 font-black">${task.goalText}</span></span>
+                    <span>👥 <strong>의뢰:</strong> ${task.requesterDept} ${task.requesterName}</span>
+                    <span>➔ <strong>담당:</strong> ${task.assigneeDept} ${task.assigneeName}</span>
                   </div>
                 </div>
 
-                <!-- 2단계 진행 파이프라인 (Visual Step Progress) -->
-                <div class="mt-5 pt-4 border-t border-slate-100">
-                  <div class="flex items-center justify-between gap-1 text-xs">
-                    ${[
-                      { num: 1, label: '1단계: 업무의뢰/접수 (AI 5대안 사전분석)' },
-                      { num: 2, label: '2단계: 다자간 부서 협의 (AI 시뮬레이션 & 토의)' }
-                    ].map(step => {
-                      const isPast = task.stepNum > step.num || (isTaskAgreed && step.num === 2);
-                      const isCurrent = task.stepNum === step.num && !isTaskAgreed;
-                      return `
-                        <div class="flex-1 flex flex-col items-center text-center">
-                          <div class="w-7 h-7 rounded-full flex items-center justify-center font-black text-xs transition-all ${
-                            isCurrent
-                              ? 'bg-blue-600 text-white ring-4 ring-blue-100 shadow-md animate-pulse'
-                              : isPast
-                              ? 'bg-emerald-600 text-white shadow'
-                              : 'bg-slate-100 text-slate-400 border border-slate-200'
-                          }">
-                            ${isPast ? '✓' : step.num}
-                          </div>
-                          <span class="text-[11px] font-black mt-1.5 truncate max-w-[160px] sm:max-w-none ${
-                            isCurrent ? 'text-blue-900 font-black' : isPast ? 'text-emerald-800 font-bold' : 'text-slate-400'
-                          }">
-                            ${step.label}${isTaskAgreed && step.num === 2 ? ' (합의완료)' : ''}
-                          </span>
-                        </div>
-                      `;
-                    }).join('<div class="h-0.5 flex-1 bg-slate-200 -mt-5"></div>')}
-                  </div>
-                </div>
-
-                <!-- 역할별 맞춤형 액션 박스 -->
-                <div class="mt-5 p-4 rounded-xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                  action.isMyAction
-                    ? 'bg-blue-50/60 border-blue-200'
-                    : 'bg-slate-50 border-slate-200'
-                }">
-                  <div>
-                    <div class="flex items-center gap-2">
-                      ${action.isMyAction
-                        ? '<span class="bg-rose-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full">내 처리 필요</span>'
-                        : '<span class="bg-slate-200 text-slate-700 text-[10px] font-black px-2 py-0.5 rounded-full">진행 상태</span>'
-                      }
-                      <span class="text-xs font-black text-slate-900">[${currentAccount.roleLabel}] 처리 가이드</span>
-                    </div>
-                    <p class="text-xs text-slate-700 font-bold mt-1">${action.desc}</p>
-                  </div>
-
-                  <!-- 액션 버튼 -->
-                  <div class="flex items-center gap-2 shrink-0">
-                    <button type="button" onclick="selectTask('${task.id}', '${action.targetTab}');" class="px-5 py-2.5 ${
+                <!-- 우측 끝 공간: 단계별 액션 버튼 -->
+                <div class="flex items-center gap-3 shrink-0">
+                  <button
+                    type="button"
+                    onclick="selectTask('${task.id}', '${action.targetTab}');"
+                    class="px-6 py-3.5 ${
                       action.isMyAction
-                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md border-2 border-blue-500'
-                        : 'bg-white hover:bg-slate-100 text-slate-900 border-2 border-slate-300'
-                    } font-black text-xs sm:text-sm rounded-xl transition-all transform active:scale-95 flex items-center gap-1.5">
-                      <span>${action.actionName}</span>
-                      <span>➔</span>
-                    </button>
-                  </div>
+                        ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg border-2 border-blue-500'
+                        : 'bg-white hover:bg-slate-100 text-slate-800 border-2 border-slate-300'
+                    } font-black text-xs sm:text-sm rounded-xl transition-all transform active:scale-95 flex items-center gap-2 whitespace-nowrap"
+                  >
+                    <span>${action.actionName}</span>
+                    <span class="text-base font-black">➔</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -2819,88 +2893,168 @@ function renderTaskListScreen() {
 }
 
 // ========================================================
-// 1. 업무요건 작성 및 접수 화면 (영업기획팀 작성 ➔ 신용관리팀 접수)
+// [신규] 심사전략 협의 안건 작성 전용 팝업 모달
+// 사용자 요구사항: 협의 안건 작성 화면은 팝업으로 떠서 작성하고 상대 부서로 상정만 수행
 // ========================================================
-function renderRequestScreen() {
+function renderAgendaModal() {
+  const currentAccount = ACCOUNTS[state.currentRoleId] || ACCOUNTS.SALES_STAFF;
+  const isSalesUser = currentAccount.dept.includes('영업');
+  const isCreditToSales = !isSalesUser;
+  
+  // 현재 로그인한 부서가 기안 부서, 상대 부서가 수신 부서로 무조건 픽스!
+  const requesterDept = isSalesUser ? '영업기획팀' : '신용관리팀';
+  const requesterName = currentAccount.name;
+  const assigneeDept = isSalesUser ? '신용관리팀' : '영업기획팀';
+  const assigneeName = isSalesUser ? '이신용 대리' : '최기획 대리';
+  const assignedTo = `${assigneeDept} ${assigneeName}`;
+
+  // state.taskRequest 동기화
+  state.taskRequest.requesterDept = requesterDept;
+  state.taskRequest.requesterName = requesterName;
+  state.taskRequest.assignedTo = assignedTo;
+  state.taskRequest.direction = isSalesUser ? 'SALES_TO_CREDIT' : 'CREDIT_TO_SALES';
+
   const req = state.taskRequest;
-  const currentTask = state.tasks.find(t => t.id === req.id) || state.tasks.find(t => t.id === state.selectedTaskId) || state.tasks[0];
-  const currentAccount = ACCOUNTS[state.currentRoleId];
-  const isCreditStaff = state.currentRoleId === 'CREDIT_STAFF';
-  const isSalesStaff = state.currentRoleId === 'SALES_STAFF';
-  const isPendingReceipt = currentTask.stepNum === 1;
 
   return `
-    <div class="space-y-6 w-full">
-      ${renderActiveTaskBanner(
-        isCreditStaff
-          ? (isPendingReceipt ? '1단계: 영업기획팀 업무요건 접수 및 검토' : '1단계: 업무요건 접수 완료')
-          : '1단계: 심사전략 업무요건 의뢰서 작성'
-      )}
-
-      <!-- 반응형 2-Column 대시보드 레이아웃 (대형 화면: 8:4 그리드로 전체 폭 완벽 활용, 중소형 화면: 1열 스택) -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <!-- 좌측 8열: 심사전략 개편 업무의뢰서 공식 문서 서식 -->
-        <div class="lg:col-span-8 bg-white border-2 border-slate-300 rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
-          <!-- 상단 문서 번호 및 타이틀 -->
-          <div class="border-b-2 border-slate-200 pb-4 flex justify-between items-center">
-            <div>
-              <span class="text-xs font-mono font-bold text-slate-500">문서 관리번호: ${req.id}</span>
-              <h2 class="text-2xl font-black text-slate-900 mt-1">심사전략 개편 업무의뢰서</h2>
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-sm animate-fadeIn">
+      <!-- 모달 컨테이너 (스크롤 분리 및 최대 높이 92vh) -->
+      <div class="bg-white border-2 border-blue-500 rounded-3xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scaleUp">
+        
+        <!-- 1. 모달 헤더 (프리미엄 JB우리캐피탈 네이비) -->
+        <div class="bg-gradient-to-r from-[#0B1B33] via-[#0F2445] to-[#15315C] text-white p-5 sm:p-6 flex items-center justify-between gap-4 border-b border-[#233D66] shrink-0">
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs font-mono font-bold text-blue-200 bg-white/10 px-2.5 py-0.5 rounded border border-white/20">문서 번호: ${req.id}</span>
+              <span class="text-xs font-black ${isSalesUser ? 'bg-amber-400 text-slate-950' : 'bg-blue-400 text-slate-950'} px-2.5 py-0.5 rounded-full shadow-xs">
+                ${isSalesUser ? '🏢 영업기획팀 기안 ➔ 신용관리팀 요청 (취급확대/완화)' : '🛡️ 신용관리팀 기안 ➔ 영업기획팀 요청 (리스크방어/강화)'}
+              </span>
+              <span class="bg-rose-500 text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-xs">
+                ${req.urgency || '정기'} 안건
+              </span>
             </div>
-            <span class="bg-rose-100 text-rose-800 text-xs font-black px-3 py-1 rounded-full border border-rose-300">
-              ${req.urgency} 의뢰 건
-            </span>
+            <h2 class="text-xl sm:text-2xl font-black text-white mt-1.5 flex items-center gap-2">
+              <span>📝 심사전략 협의 안건 작성</span>
+              <span class="text-xs font-normal text-slate-300 hidden sm:inline">(작성 후 상대 부서로 안건 상정)</span>
+            </h2>
           </div>
+          <!-- 우측 상단 닫기 X 버튼 -->
+          <button
+            type="button"
+            onclick="closeAgendaModal();"
+            class="w-10 h-10 rounded-xl bg-white/10 hover:bg-white/20 text-white hover:text-rose-300 flex items-center justify-center font-black text-lg transition-all border border-white/20 shrink-0"
+            title="작성 취소하고 팝업 닫기"
+          >
+            ✕
+          </button>
+        </div>
 
-          <!-- 의뢰 폼 입력/검토 내용 -->
+        <!-- 2. 모달 바디 (스크롤 가능한 폼 영역) -->
+        <div class="flex-1 overflow-y-auto p-5 sm:p-7 space-y-5 bg-slate-50/60 text-slate-900">
+
+          <!-- 월 정리 모니터링 연동 안내 배너 (모니터링에서 넘어온 경우 표시) -->
+          ${req.backgroundReason && req.backgroundReason.includes('월간 모니터링') ? `
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl p-4 flex items-start gap-3 shadow-2xs">
+              <span class="text-2xl shrink-0">💡</span>
+              <div class="text-xs">
+                <p class="font-black text-blue-950 text-sm">
+                  [월 정리 모니터링 발굴 안건 자동 입력됨]
+                </p>
+                <p class="text-blue-800 font-medium mt-1 leading-relaxed">
+                  젭대리 AI가 매월 찾아놓은 최적 안건의 발굴 사유, 제안 조건, 예상 영향도 지표가 폼에 기본 완성되어 있습니다. 내용을 확인하신 후 하단의 <strong>[🚀 협의 안건 공식 상정]</strong> 버튼을 누르면 상대방 부서([${assigneeDept}])로 전달되어 접수 후 부서간 협의가 시작됩니다.
+                </p>
+              </div>
+            </div>
+          ` : ''}
+
+          <!-- 안건 작성 폼 -->
           <form onsubmit="event.preventDefault(); submitTaskRequest();" class="space-y-5 text-sm">
-            <!-- 부서 정보 테이블 -->
+            <!-- 부서 및 기안/수신 정보 테이블 (현재 로그인 인원에 따라 픽스) -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div>
-                <label class="block text-xs font-black text-slate-600 mb-1">의뢰 부서</label>
-                <input type="text" value="${req.requesterDept}" ${isCreditStaff ? 'readonly' : ''} oninput="state.taskRequest.requesterDept=this.value;" class="w-full ${isCreditStaff ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'} border border-slate-300 rounded-lg p-2.5 font-bold text-slate-900" required />
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-black text-slate-700">기안(발의) 부서</label>
+                  <span class="text-[10px] text-slate-500 font-bold">🔒 로그인 부서 고정</span>
+                </div>
+                <input
+                  type="text"
+                  value="${requesterDept}"
+                  readonly
+                  class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 font-black text-slate-900 cursor-not-allowed shadow-2xs"
+                />
               </div>
               <div>
-                <label class="block text-xs font-black text-slate-600 mb-1">의뢰자 (기안)</label>
-                <input type="text" value="${isSalesStaff ? '최기획 대리' : req.requesterName}" ${isCreditStaff ? 'readonly' : ''} oninput="state.taskRequest.requesterName=this.value;" class="w-full ${isCreditStaff ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'} border border-slate-300 rounded-lg p-2.5 font-bold text-slate-900" required />
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-black text-slate-700">기안 담당자</label>
+                  <span class="text-[10px] text-slate-500 font-bold">🔒 로그인 담당자</span>
+                </div>
+                <input
+                  type="text"
+                  value="${requesterName}"
+                  readonly
+                  class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 font-black text-slate-900 cursor-not-allowed shadow-2xs"
+                />
               </div>
               <div>
-                <label class="block text-xs font-black text-slate-600 mb-1">수신 부서 (담당)</label>
-                <input type="text" value="${req.assignedTo}" ${isCreditStaff ? 'readonly' : ''} oninput="state.taskRequest.assignedTo=this.value;" class="w-full ${isCreditStaff ? 'bg-blue-50 border-blue-400' : 'bg-white border-2 border-blue-400'} rounded-lg p-2.5 font-bold text-blue-900" required />
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-black text-blue-950">수신(상대방) 부서</label>
+                  <span class="text-[10px] text-blue-700 font-bold">🎯 요청 대상 고정</span>
+                </div>
+                <input
+                  type="text"
+                  value="${assignedTo}"
+                  readonly
+                  class="w-full bg-blue-50 border-2 border-blue-400 rounded-lg p-2.5 font-black text-blue-950 cursor-not-allowed shadow-2xs"
+                />
               </div>
             </div>
 
-            <!-- 의뢰 건명 -->
+            <!-- 안건 건명 -->
             <div>
-              <label class="block text-sm font-black text-slate-800 mb-1.5">의뢰 건명</label>
-              <input type="text" value="${req.title}" ${isCreditStaff ? 'readonly' : ''} oninput="state.taskRequest.title=this.value;" class="w-full ${isCreditStaff ? 'bg-slate-100' : 'bg-slate-50 focus:border-blue-600'} border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900 text-base focus:outline-none" required />
+              <label class="block text-sm font-black text-slate-800 mb-1.5">협의 안건 건명</label>
+              <input
+                type="text"
+                value="${req.title || ''}"
+                oninput="state.taskRequest.title=this.value;"
+                class="w-full bg-slate-50 focus:border-blue-600 border-2 border-slate-300 rounded-xl p-3 font-black text-slate-900 text-base focus:outline-none"
+                placeholder="예: [긴급] PL 신용대출 36개월물 심사기준 개편 협의 건"
+                required
+              />
             </div>
 
-            <!-- 대상 상품 및 해결 목표 -->
+            <!-- 대상 상품 및 최적화 목표 -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-black text-slate-800 mb-1.5">대상 여신 상품</label>
-                <select ${isCreditStaff ? 'disabled' : ''} onchange="state.taskRequest.targetProduct=this.value; state.constraint.targetProduct=this.value; renderApp();" class="w-full ${isCreditStaff ? 'bg-slate-100 cursor-not-allowed' : 'bg-slate-50'} border-2 border-slate-300 rounded-xl p-3 font-bold text-slate-900">
+                <select
+                  onchange="state.taskRequest.targetProduct=this.value; if(state.constraint) state.constraint.targetProduct=this.value; renderApp();"
+                  class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl p-3 font-bold text-slate-900"
+                >
                   <option value="PL 신용대출 36개월물" ${req.targetProduct === 'PL 신용대출 36개월물' ? 'selected' : ''}>PL 신용대출 36개월물 (전체 184,200건)</option>
                   <option value="직장인 프라임 신용대출" ${req.targetProduct === '직장인 프라임 신용대출' ? 'selected' : ''}>직장인 프라임 신용대출 (72,000건)</option>
                   <option value="중금리 햇살론 대환 48개월물" ${req.targetProduct === '중금리 햇살론 대환 48개월물' ? 'selected' : ''}>중금리 햇살론 대환 48개월물 (41,500건)</option>
+                  <option value="JB 오토론 (신차/중고차)" ${req.targetProduct === 'JB 오토론 (신차/중고차)' ? 'selected' : ''}>JB 오토론 (신차/중고차) (68,000건)</option>
                   <option value="청년 맞춤형 버팀목 전세대출" ${req.targetProduct === '청년 맞춤형 버팀목 전세대출' ? 'selected' : ''}>청년 맞춤형 버팀목 전세대출 (52,000건)</option>
                 </select>
               </div>
 
               <div>
-                <label class="block text-sm font-black text-slate-800 mb-1.5">최적화 목표</label>
+                <label class="block text-sm font-black text-slate-800 mb-1.5">협의 제안 목표</label>
                 <div class="grid grid-cols-3 gap-2">
                   ${[
-                    { id: 'delinquency', label: '연체율 낮추기', icon: '🔴' },
-                    { id: 'profit', label: '순이익 늘리기', icon: '🟢' },
-                    { id: 'conversion', label: '원금 회수율', icon: '🔵' }
+                    { id: 'delinquency', label: '연체율 방어', icon: '🔴' },
+                    { id: 'profit', label: '수익성 증대', icon: '🟢' },
+                    { id: 'conversion', label: '승인율 방어', icon: '🔵' }
                   ].map(t => `
-                    <button type="button" ${isCreditStaff ? 'disabled' : ''} onclick="state.taskRequest.targetMetric='${t.id}'; state.constraint.targetMetric='${t.id}'; renderApp();" class="p-2.5 rounded-xl border-2 text-center transition-all ${
-                      req.targetMetric === t.id
-                        ? 'bg-blue-50 border-blue-600 text-blue-900 font-black shadow-sm'
-                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                    }">
+                    <button
+                      type="button"
+                      onclick="state.taskRequest.targetMetric='${t.id}'; if(state.constraint) state.constraint.targetMetric='${t.id}'; renderApp();"
+                      class="p-2.5 rounded-xl border-2 text-center transition-all ${
+                        req.targetMetric === t.id
+                          ? 'bg-blue-50 border-blue-600 text-blue-900 font-black shadow-sm'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                      }"
+                    >
                       <span class="block text-xs">${t.icon}</span>
                       <span class="text-xs font-bold">${t.label}</span>
                     </button>
@@ -2909,215 +3063,136 @@ function renderRequestScreen() {
               </div>
             </div>
 
-            <!-- 의뢰 배경 및 사유 -->
+            <!-- 안건 발의 배경 및 사유 -->
             <div>
-              <label class="block text-sm font-black text-slate-800 mb-1.5">
-                의뢰 배경 및 영업기획팀 상황
-              </label>
-              <textarea rows="4" ${isCreditStaff ? 'readonly' : ''} oninput="state.taskRequest.backgroundReason=this.value;" class="w-full ${isCreditStaff ? 'bg-slate-100' : 'bg-slate-50 focus:border-blue-600'} border-2 border-slate-300 rounded-xl p-3.5 text-slate-900 leading-relaxed font-medium focus:outline-none" required>${req.backgroundReason}</textarea>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-sm font-black text-slate-800">
+                  안건 발의 배경 및 제안 내용
+                </label>
+                <span class="text-xs text-slate-500 font-medium">상대방 부서에서 접수 시 검토할 핵심 사유</span>
+              </div>
+              <textarea
+                rows="4"
+                oninput="state.taskRequest.backgroundReason=this.value;"
+                class="w-full bg-slate-50 focus:border-blue-600 border-2 border-slate-300 rounded-xl p-3.5 text-slate-900 leading-relaxed font-medium focus:outline-none"
+                placeholder="발의 사유 및 상대방 부서에 요청할 조율 내용을 상세히 기재해주세요."
+                required
+              >${req.backgroundReason || ''}</textarea>
             </div>
 
-            <!-- 제약 조건 -->
+            <!-- 제약 조건 설정 (승인율 하락폭, 최소 표본) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
               <div>
                 <div class="flex justify-between items-center mb-1">
-                  <span class="text-xs font-black text-slate-700">승인율 최대 허용 하락폭</span>
-                  <span class="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded">-${req.maxApprovalDrop}%p 이내</span>
+                  <span class="text-xs font-black text-slate-700">승인율 최대 허용 변동폭</span>
+                  <span class="text-xs font-black text-amber-800 bg-amber-100 px-2 py-0.5 rounded">-${req.maxApprovalDrop || 4.2}%p 이내</span>
                 </div>
-                <input type="range" min="1.0" max="10.0" step="0.5" value="${req.maxApprovalDrop}" ${isCreditStaff ? 'disabled' : ''} oninput="state.taskRequest.maxApprovalDrop=parseFloat(this.value); state.constraint.maxApprovalDrop=parseFloat(this.value); renderApp();" class="w-full accent-blue-600 h-2 bg-slate-200 rounded-lg cursor-pointer" />
+                <input
+                  type="range"
+                  min="1.0"
+                  max="10.0"
+                  step="0.5"
+                  value="${req.maxApprovalDrop || 4.2}"
+                  oninput="state.taskRequest.maxApprovalDrop=parseFloat(this.value); if(state.constraint) state.constraint.maxApprovalDrop=parseFloat(this.value); renderApp();"
+                  class="w-full accent-blue-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                />
               </div>
 
               <div>
                 <div class="flex justify-between items-center mb-1">
                   <span class="text-xs font-black text-slate-700">최소 표본 비중 요건</span>
-                  <span class="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">${req.minSampleSize}% 이상 (약 1,840명)</span>
+                  <span class="text-xs font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded">${req.minSampleSize || 1.0}% 이상</span>
                 </div>
-                <input type="range" min="0.5" max="5.0" step="0.5" value="${req.minSampleSize}" ${isCreditStaff ? 'disabled' : ''} oninput="state.taskRequest.minSampleSize=parseFloat(this.value); state.constraint.minSampleSize=parseFloat(this.value); renderApp();" class="w-full accent-emerald-600 h-2 bg-slate-200 rounded-lg cursor-pointer" />
+                <input
+                  type="range"
+                  min="0.5"
+                  max="5.0"
+                  step="0.5"
+                  value="${req.minSampleSize || 1.0}"
+                  oninput="state.taskRequest.minSampleSize=parseFloat(this.value); if(state.constraint) state.constraint.minSampleSize=parseFloat(this.value); renderApp();"
+                  class="w-full accent-emerald-600 h-2 bg-slate-200 rounded-lg cursor-pointer"
+                />
               </div>
             </div>
 
-            <!-- 하단 액션 버튼 영역 -->
-            ${isCreditStaff ? `
-              <div class="pt-2">
-                ${isPendingReceipt ? `
-                  <button type="button" onclick="acceptTaskRequest('${currentTask.id}');" class="w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-base rounded-2xl shadow-xl transition-all transform active:scale-98 flex items-center justify-center gap-2.5 border-2 border-blue-400">
-                    <span class="text-xl">📥</span>
-                    <span>업무요건 접수 처리 (AI 5대 최적안 분석완료 ➔ 2단계 부서협의 이동)</span>
-                    <span class="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-lg">➔ 2단계 이동</span>
-                  </button>
-                ` : `
-                  <div class="flex flex-col sm:flex-row gap-3">
-                    <button type="button" onclick="switchTab('collaboration');" class="flex-1 py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
-                      <span>⚡ 2단계: 다자간 부서 협의 (AI 시뮬레이션 & 토의) 화면으로 이동</span>
-                      <span>➔</span>
-                    </button>
-                    <button type="button" onclick="switchTab('taskList');" class="px-6 py-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm rounded-xl border border-slate-300">
-                      목록으로
-                    </button>
-                  </div>
-                `}
-              </div>
-            ` : `
-              <div class="pt-2">
-                <button type="submit" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-base rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
-                  <span>🚀 업무 의뢰 등록 (AI 5대 최적안 자동 분석 연계)</span>
-                  <span>➔</span>
-                </button>
-              </div>
-            `}
+            <!-- 프로세스 및 부서간 협의 팁 안내 바 -->
+            <div class="p-3.5 bg-blue-50/80 rounded-xl border border-blue-200 text-xs">
+              <span class="font-black text-blue-900 block flex items-center gap-1">
+                <span>💡</span>
+                <span>부서간 협의 진행 안내</span>
+              </span>
+              <p class="text-[11px] text-blue-800 font-medium mt-1 leading-snug">
+                ${isCreditToSales
+                  ? '신용관리팀 안건 상정 시, 영업기획팀이 우량 차주(1~2등급)에 대한 예외 적용이나 한도 유예 조건을 제시할 수 있도록 여지를 열어두면 원활한 합의가 가능합니다.'
+                  : '영업기획팀 안건 상정 시, 무리한 승인율 상승 대신 연체율 목표치를 준수할 수 있는 우량 차주군 특정 조건을 제시하면 신용관리팀 접수가 신속히 이뤄집니다.'
+                }
+              </p>
+            </div>
           </form>
         </div>
 
-        <!-- 우측 4열: 신용관리팀 접수 센터 & 의뢰 요건 실시간 분석 가이드 패널 -->
-        <div class="lg:col-span-4 space-y-5">
-          <!-- 1. 접수 처리 관리 카드 -->
-          ${isCreditStaff ? `
-            <div class="bg-white border-2 ${isPendingReceipt ? 'border-blue-500 ring-2 ring-blue-100' : 'border-emerald-500'} rounded-2xl p-6 shadow-sm space-y-4">
-              <div class="flex items-center justify-between pb-3 border-b border-slate-200">
-                <span class="text-xs font-black ${isPendingReceipt ? 'text-blue-900' : 'text-emerald-900'} flex items-center gap-1.5">
-                  <span class="text-base">${isPendingReceipt ? '📥' : '✅'}</span>
-                  <span>${isPendingReceipt ? '신용관리팀 접수 대기' : '접수 처리 완료'}</span>
-                </span>
-                <span class="text-[10px] font-bold ${isPendingReceipt ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'} px-2.5 py-0.5 rounded-full">
-                  ${isPendingReceipt ? 'Action 필요' : '2단계 준비 완료'}
-                </span>
-              </div>
-
-              <div class="space-y-2.5 text-xs">
-                <p class="text-slate-700 leading-relaxed font-medium">
-                  ${isPendingReceipt
-                    ? '영업기획팀에서 제출한 개편 의뢰서입니다. 젭대리 AI가 18.4만 건 빅데이터 백테스트를 통해 <strong>3~5개의 최적 안건을 사전 분석 완료</strong>해 두었습니다. 접수 처리 시 <strong>[2단계: 다자간 부서 협의]</strong>로 즉시 이동하여 전 부서 토의를 시작할 수 있습니다.'
-                    : '접수 처리가 완료되었습니다. [2단계: 다자간 부서 협의] 화면에서 AI 사전분석 5대 안건을 검토하고 영업기획팀, 팀장, 본부장과 함께 실시간 토의를 진행하세요.'
-                  }
-                </p>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-[11px] font-bold text-slate-600">
-                  <div class="flex justify-between"><span>기안 부서</span><span class="text-slate-900 font-black">${req.requesterDept} (${req.requesterName})</span></div>
-                  <div class="flex justify-between"><span>접수 담당</span><span class="text-blue-700 font-black">${currentAccount.dept} ${currentAccount.name}</span></div>
-                  <div class="flex justify-between"><span>기안 일시</span><span class="font-mono text-slate-800">${req.requestDate || currentTask.requestDate || '2026-10-11'}</span></div>
-                </div>
-              </div>
-
-              ${isPendingReceipt ? `
-                <button type="button" onclick="acceptTaskRequest('${currentTask.id}');" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-md border border-blue-400 flex items-center justify-center gap-2 transition-transform active:scale-95">
-                  <span>📥</span>
-                  <span>즉시 접수 처리하기 (AI 5대안 탑재)</span>
-                  <span>➔</span>
-                </button>
-              ` : `
-                <button type="button" onclick="switchTab('collaboration');" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95">
-                  <span>2단계: 다자간 부서 협의 이동</span>
-                  <span>➔</span>
-                </button>
-              `}
-            </div>
-          ` : `
-            <div class="bg-white border-2 border-slate-300 rounded-2xl p-6 shadow-sm space-y-3.5">
-              <div class="flex items-center justify-between pb-3 border-b border-slate-200">
-                <span class="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                  <span>📋</span>
-                  <span>기안 상태 안내</span>
-                </span>
-                <span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-                  영업기획팀 작성 중
-                </span>
-              </div>
-              <p class="text-xs text-slate-600 font-medium leading-relaxed">
-                의뢰서를 등록하시면 젭대리 AI가 18.4만 건 빅데이터 백테스트로 3~5개 최적 안건을 사전 분석하여 신용관리팀에 전달됩니다.
-              </p>
-            </div>
-          `}
-
-          <!-- 2. 의뢰 요건 핵심 분석 요약 카드 -->
-          <div class="bg-white border-2 border-slate-300 rounded-2xl p-6 shadow-sm space-y-3.5">
-            <div class="flex items-center justify-between pb-2.5 border-b border-slate-200">
-              <span class="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                <span>📊</span>
-                <span>여신 상품 및 제약조건 요약</span>
-              </span>
-              <span class="text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">실시간 집계</span>
-            </div>
-
-            <div class="space-y-2.5 text-xs">
-              <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <span class="text-slate-500 text-[11px] block font-bold">대상 차주 모수 (전수 DB)</span>
-                <span class="text-base font-black text-slate-900 font-mono">184,200건</span>
-                <span class="text-[10px] text-slate-500 block mt-0.5">최근 12개월간 PL 36개월물 누적 표본</span>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2">
-                <div class="p-2.5 bg-amber-50/60 rounded-xl border border-amber-200 text-center">
-                  <span class="text-amber-800 text-[10px] block font-bold">승인율 하락 방어</span>
-                  <span class="text-sm font-black text-amber-900 font-mono">-${req.maxApprovalDrop}%p</span>
-                </div>
-                <div class="p-2.5 bg-emerald-50/60 rounded-xl border border-emerald-200 text-center">
-                  <span class="text-emerald-800 text-[10px] block font-bold">최소 표본 요건</span>
-                  <span class="text-sm font-black text-emerald-900 font-mono">${req.minSampleSize}% 이상</span>
-                </div>
-              </div>
-
-              <div class="p-3 bg-rose-50/60 rounded-xl border border-rose-200 text-xs">
-                <span class="font-black text-rose-900 block flex items-center gap-1">
-                  <span>⚠️</span>
-                  <span>주요 모니터링 리스크 요인</span>
-                </span>
-                <p class="text-[11px] text-rose-800 font-medium mt-1 leading-snug">
-                  단기 다중채무 차주 신용조회 급증 및 연체전이율(2.8%) 상승 압력 차단 필요
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- 3. 파이프라인 프로세스 단계 맵 -->
-          <div class="bg-white border-2 border-slate-300 rounded-2xl p-6 shadow-sm space-y-3">
-            <span class="text-xs font-black text-slate-900 block pb-2 border-b border-slate-200">
-              🗺️ 젭대리 심사전략 라이프사이클
-            </span>
-            <div class="space-y-2 text-xs">
-              <div class="flex items-center gap-2 p-2 rounded-lg bg-blue-50 border border-blue-200 text-blue-900 font-black">
-                <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">1</span>
-                <span>1단계: 업무요건 의뢰 및 접수 (AI 최적안 분석완료)</span>
-              </div>
-              <div class="flex items-center gap-2 p-2 rounded-lg text-slate-600 font-bold bg-slate-50 border border-slate-200">
-                <span class="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">2</span>
-                <span>2단계: 다자간 부서 협의 (AI 시뮬레이션 & 전 부서 토의)</span>
-              </div>
-              <div class="flex items-center gap-2 p-2 rounded-lg text-slate-500 font-bold">
-                <span class="w-5 h-5 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-[10px]">초</span>
-                <span>심사전략 품의서 초안 작성 (부서합의 완료 후 신용관리팀)</span>
-              </div>
-            </div>
-          </div>
+        <!-- 3. 모달 푸터 (하단 고정 액션 바) -->
+        <div class="border-t-2 border-slate-200 bg-white p-4 sm:px-7 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 shadow-lg">
+          <button
+            type="button"
+            onclick="closeAgendaModal();"
+            class="w-full sm:w-auto px-5 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 font-black text-sm rounded-xl border border-slate-300 transition-all flex items-center justify-center gap-1.5"
+          >
+            <span>✕</span>
+            <span>작성 취소 (팝업 닫기)</span>
+          </button>
+          
+          <button
+            type="button"
+            onclick="submitTaskRequest();"
+            class="w-full sm:flex-1 py-3.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-700 hover:to-indigo-800 text-white font-black text-base rounded-xl shadow-xl transition-all transform active:scale-98 flex items-center justify-center gap-2.5 border-2 border-blue-400"
+          >
+            <span class="text-xl">🚀</span>
+            <span>협의 안건 공식 상정 및 상대방 부서 전달</span>
+            <span class="text-xs font-bold bg-white/20 px-2.5 py-1 rounded-lg">➔ 다자간 협의 대기로 이동</span>
+          </button>
         </div>
       </div>
+    </div>
   `;
+}
+
+// 하위 호환성 유지
+function renderRequestScreen() {
+  return renderAgendaModal();
 }
 
 // AI 사전 선행 탐색 모달
 function renderAiPreAnalyzingModal() {
   return `
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
-      <div class="bg-white border-2 border-blue-500 rounded-3xl w-full max-w-lg p-8 shadow-2xl text-slate-900 text-center space-y-5">
+    <div onclick="state.isAiPreAnalyzing=false; renderApp();" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn cursor-pointer">
+      <div onclick="event.stopPropagation();" class="bg-white border-2 border-blue-500 rounded-3xl w-full max-w-lg p-8 shadow-2xl text-slate-900 text-center space-y-5 cursor-default relative">
+        <button type="button" onclick="state.isAiPreAnalyzing=false; renderApp();" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 font-black text-lg p-1">✕</button>
         <div class="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center mx-auto text-3xl shadow-md">
           🤖
         </div>
         <div>
           <h3 class="text-xl font-black text-slate-900">젭대리 AI 사전 시뮬레이션 수행 중</h3>
           <p class="text-xs text-slate-600 mt-1">
-            영업기획팀 의뢰 조건에 맞춰 184,200건 데이터를 전수 분석하여 최적안을 도출합니다.
+            상정된 안건 조건에 맞춰 184,200건 데이터를 전수 분석하여 5대 최적 대안을 도출합니다.
           </p>
         </div>
 
         <div class="space-y-2 text-left bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs font-bold text-slate-700">
           <div class="flex items-center gap-2 text-emerald-700">
-            <span>✓</span> <span>PL 36개월물 / 연체율 최소화 / 승인율 하락 -5.0%p 기준 인식</span>
+            <span>✓</span> <span>대상 상품 및 제약조건 기준 인식 완료</span>
           </div>
           <div class="flex items-center gap-2 text-emerald-700">
             <span>✓</span> <span>184,200건 과거 데이터 전수 스캔 및 6개 단조 변수 결합 축 분석</span>
           </div>
           <div class="flex items-center gap-2 text-blue-700 animate-pulse">
-            <span>⚡</span> <span>OOT 백테스트 검증 및 상위 3대 파레토 최적안 패키징 완료</span>
+            <span>⚡</span> <span>OOT 백테스트 검증 및 상위 5대 파레토 최적안 패키징 완료</span>
           </div>
         </div>
+
+        <button type="button" onclick="state.isAiPreAnalyzing=false; renderApp();" class="w-full py-2.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 transition-all">
+          <span>확인 (부서간 협의 화면 보기)</span>
+        </button>
       </div>
     </div>
   `;
@@ -3312,6 +3387,467 @@ function renderDiscoveryScreen() {
   `;
 }
 
+// ----------------------------------------------------
+// 2-1. 분석 결과 SEG(심사등급)별 차주 분포 및 리스크 프로파일 그래프
+// ----------------------------------------------------
+function setCollabSegMetric(metric) {
+  state.collabSegChartMetric = metric;
+  renderApp();
+}
+
+function renderSegDistributionChart() {
+  const activeMetric = state.collabSegChartMetric || 'combo';
+  const rows = state.breakdownRows || [];
+  const totalCount = rows.reduce((sum, r) => sum + r.count, 0) || 14820;
+
+  const segMeta = [
+    { shortName: '1~2등급', grade: '최우량', color: '#10B981', gradientFrom: '#34D399', gradientTo: '#059669', badgeBg: 'bg-emerald-100 text-emerald-900 border border-emerald-400', tag: '★ 예외보존' },
+    { shortName: '3등급', grade: '우량', color: '#2563EB', gradientFrom: '#60A5FA', gradientTo: '#1D4ED8', badgeBg: 'bg-blue-100 text-blue-900 border border-blue-300', tag: '승인유지' },
+    { shortName: '4등급', grade: '일반', color: '#3B82F6', gradientFrom: '#93C5FD', gradientTo: '#2563EB', badgeBg: 'bg-indigo-100 text-indigo-900 border border-indigo-300', tag: '승인유지' },
+    { shortName: '5등급', grade: '중위험', color: '#F59E0B', gradientFrom: '#FCD34D', gradientTo: '#D97706', badgeBg: 'bg-amber-100 text-amber-900 border border-amber-300', tag: '부결통제' },
+    { shortName: '6등급', grade: '고위험', color: '#EF4444', gradientFrom: '#F87171', gradientTo: '#DC2626', badgeBg: 'bg-rose-100 text-rose-900 border border-rose-300', tag: '부결통제' },
+    { shortName: '7등급 이하', grade: '초고위험', color: '#B91C1C', gradientFrom: '#EF4444', gradientTo: '#991B1B', badgeBg: 'bg-red-200 text-red-950 border border-red-400', tag: '즉시부결' },
+  ];
+
+  // SVG parameters
+  const chartW = 680;
+  const chartH = 265;
+  const baseY = 195;
+  const leftX = 50;
+  const usableW = 580;
+  const slotW = usableW / 6;
+  const maxRatio = 40.0;
+  const maxDelinq = 9.0;
+
+  // Calculate coordinates for dual-axis chart
+  const points = rows.map((r, i) => {
+    const cx = leftX + (i * slotW) + (slotW / 2);
+    const barH = Math.max(8, (r.ratio / maxRatio) * 150);
+    const barY = baseY - barH;
+    const delinqY = baseY - (r.delinquencyRate / maxDelinq) * 150;
+    return {
+      cx,
+      barY,
+      barH,
+      delinqY,
+      row: r,
+      meta: segMeta[i] || segMeta[0]
+    };
+  });
+
+  const pathD = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.cx.toFixed(1)} ${p.delinqY.toFixed(1)}`).join(' ');
+  const areaD = `${pathD} L ${points[points.length - 1].cx.toFixed(1)} ${baseY} L ${points[0].cx.toFixed(1)} ${baseY} Z`;
+
+  return `
+    <div class="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-sm space-y-4">
+      <!-- 헤더 및 지표 탭 바 -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h5 class="text-sm font-black text-slate-900 flex items-center gap-1.5">
+              <span>📊</span>
+              <span>분석 결과 SEG(심사등급)별 차주 분포 및 리스크 프로파일</span>
+            </h5>
+            <span class="text-[10px] bg-blue-100 text-[#0565F0] font-black px-2 py-0.5 rounded-full border border-blue-200">
+              18.4만 건 빅데이터 전수 분석
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 font-medium mt-0.5">
+            세그먼트(SEG)별 모수 비중(건수), 연체율 추이 및 손익 기여도를 그래프로 비교 검토합니다.
+          </p>
+        </div>
+
+        <!-- 4대 메트릭 탭 전환 버튼 -->
+        <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0 self-start sm:self-auto text-xs">
+          <button
+            type="button"
+            onclick="setCollabSegMetric('combo');"
+            class="px-2.5 py-1.5 rounded-lg font-bold transition-all ${
+              activeMetric === 'combo'
+                ? 'bg-blue-600 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }"
+            title="모수 비중 바 차트 + 연체율 꺾은선 복합 그래프"
+          >
+            📊 복합 뷰
+          </button>
+          <button
+            type="button"
+            onclick="setCollabSegMetric('ratio');"
+            class="px-2.5 py-1.5 rounded-lg font-bold transition-all ${
+              activeMetric === 'ratio'
+                ? 'bg-blue-600 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }"
+            title="세그먼트별 모수 건수 및 구성 비중"
+          >
+            👥 모수 구성비
+          </button>
+          <button
+            type="button"
+            onclick="setCollabSegMetric('delinquency');"
+            class="px-2.5 py-1.5 rounded-lg font-bold transition-all ${
+              activeMetric === 'delinquency'
+                ? 'bg-blue-600 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }"
+            title="세그먼트별 연체율 및 위험도"
+          >
+            📉 연체율 위험도
+          </button>
+          <button
+            type="button"
+            onclick="setCollabSegMetric('profit');"
+            class="px-2.5 py-1.5 rounded-lg font-bold transition-all ${
+              activeMetric === 'profit'
+                ? 'bg-blue-600 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }"
+            title="세그먼트별 손익 기여도(억원)"
+          >
+            💰 손익 기여도
+          </button>
+        </div>
+      </div>
+
+      <!-- 메트릭별 컨텐츠 영역 -->
+      ${activeMetric === 'combo' ? `
+        <!-- 1. 복합 차트 (SVG Bar + Delinquency Curve) -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between text-xs px-1">
+            <div class="flex items-center gap-4 text-[11px] font-bold">
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm bg-gradient-to-t from-blue-700 to-blue-400"></span>
+                <span class="text-slate-700">모수 비중 (막대 높이, 좌측 축 %)</span>
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-0.5 bg-rose-600"></span>
+                <span class="w-2 h-2 rounded-full bg-rose-600 ring-2 ring-white"></span>
+                <span class="text-rose-700 font-black">연체율 추이 (꺾은선, 우측 축 %)</span>
+              </span>
+            </div>
+            <span class="text-[11px] font-bold text-slate-500">
+              분석 대상 모수: <strong class="text-slate-800">${totalCount.toLocaleString()}건</strong> (100.0%)
+            </span>
+          </div>
+
+          <div class="w-full overflow-x-auto bg-slate-50/70 p-3 rounded-xl border border-slate-200">
+            <svg viewBox="0 0 ${chartW} ${chartH}" class="w-full h-auto min-w-[560px] select-none font-sans">
+              <defs>
+                <linearGradient id="grad-bar-0" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#34D399" />
+                  <stop offset="100%" stop-color="#059669" />
+                </linearGradient>
+                <linearGradient id="grad-bar-1" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#60A5FA" />
+                  <stop offset="100%" stop-color="#1D4ED8" />
+                </linearGradient>
+                <linearGradient id="grad-bar-2" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#818CF8" />
+                  <stop offset="100%" stop-color="#3730A3" />
+                </linearGradient>
+                <linearGradient id="grad-bar-3" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FBBF24" />
+                  <stop offset="100%" stop-color="#D97706" />
+                </linearGradient>
+                <linearGradient id="grad-bar-4" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#F87171" />
+                  <stop offset="100%" stop-color="#DC2626" />
+                </linearGradient>
+                <linearGradient id="grad-bar-5" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#EF4444" />
+                  <stop offset="100%" stop-color="#7F1D1D" />
+                </linearGradient>
+                <linearGradient id="delinq-area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#DC2626" stop-opacity="0.25" />
+                  <stop offset="100%" stop-color="#DC2626" stop-opacity="0.0" />
+                </linearGradient>
+              </defs>
+
+              <!-- 배경 수평 눈금선 및 좌/우 Y축 라벨 -->
+              ${[0, 10, 20, 30, 40].map(val => {
+                const y = baseY - (val / maxRatio) * 150;
+                const delinqVal = ((val / maxRatio) * maxDelinq).toFixed(1);
+                return `
+                  <line x1="${leftX}" y1="${y}" x2="${leftX + usableW}" y2="${y}" stroke="#E2E8F0" stroke-dasharray="4,4" stroke-width="1" />
+                  <text x="${leftX - 8}" y="${y + 3}" text-anchor="end" fill="#64748B" font-size="9" font-weight="bold">${val}%</text>
+                  <text x="${leftX + usableW + 8}" y="${y + 3}" text-anchor="start" fill="#EF4444" font-size="9" font-weight="bold">${delinqVal}%</text>
+                `;
+              }).join('')}
+
+              <!-- 기준선 (Base line) -->
+              <line x1="${leftX}" y1="${baseY}" x2="${leftX + usableW}" y2="${baseY}" stroke="#94A3B8" stroke-width="1.5" />
+
+              <!-- 막대 차트 (모수 비중 %) -->
+              ${points.map((p, idx) => {
+                const barWidth = 42;
+                const barX = p.cx - barWidth / 2;
+                return `
+                  <g class="transition-all hover:opacity-90 cursor-pointer">
+                    <!-- 막대 사각형 (상단 모서리 라운딩) -->
+                    <rect
+                      x="${barX}"
+                      y="${p.barY.toFixed(1)}"
+                      width="${barWidth}"
+                      height="${p.barH.toFixed(1)}"
+                      rx="4"
+                      fill="url(#grad-bar-${idx})"
+                    />
+                    <!-- 상단 수치 라벨 (건수 / 비중) -->
+                    <text
+                      x="${p.cx.toFixed(1)}"
+                      y="${(p.barY - 7).toFixed(1)}"
+                      text-anchor="middle"
+                      fill="#1E293B"
+                      font-size="9.5"
+                      font-weight="900"
+                    >${p.row.count.toLocaleString()}건</text>
+                    <text
+                      x="${p.cx.toFixed(1)}"
+                      y="${(p.barY - 18).toFixed(1)}"
+                      text-anchor="middle"
+                      fill="#64748B"
+                      font-size="8.5"
+                      font-weight="bold"
+                    >(${p.row.ratio.toFixed(1)}%)</text>
+                  </g>
+                `;
+              }).join('')}
+
+              <!-- 연체율 영역 음영 (Translucent fill) -->
+              <path d="${areaD}" fill="url(#delinq-area)" />
+
+              <!-- 연체율 꺾은선 (Bold red line) -->
+              <path
+                d="${pathD}"
+                fill="none"
+                stroke="#DC2626"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+
+              <!-- 연체율 데이터 포인트 원 및 배지 -->
+              ${points.map(p => `
+                <g>
+                  <!-- 외곽 펄스 서클 -->
+                  <circle cx="${p.cx.toFixed(1)}" cy="${p.delinqY.toFixed(1)}" r="5" fill="#FFFFFF" stroke="#DC2626" stroke-width="2.5" />
+                  <circle cx="${p.cx.toFixed(1)}" cy="${p.delinqY.toFixed(1)}" r="2" fill="#DC2626" />
+                  <!-- 연체율 수치 태그 -->
+                  <rect
+                    x="${(p.cx - 18).toFixed(1)}"
+                    y="${(p.delinqY - 20).toFixed(1)}"
+                    width="36"
+                    height="14"
+                    rx="3"
+                    fill="#FEF2F2"
+                    stroke="#F87171"
+                    stroke-width="1"
+                  />
+                  <text
+                    x="${p.cx.toFixed(1)}"
+                    y="${(p.delinqY - 9).toFixed(1)}"
+                    text-anchor="middle"
+                    fill="#991B1B"
+                    font-size="8.5"
+                    font-weight="900"
+                  >${p.row.delinquencyRate.toFixed(2)}%</text>
+                </g>
+              `).join('')}
+
+              <!-- X축 라벨 (등급명, 고객특성, 심사판정) -->
+              ${points.map(p => `
+                <g>
+                  <text x="${p.cx.toFixed(1)}" y="${baseY + 16}" text-anchor="middle" fill="#0F172A" font-size="10" font-weight="900">${p.meta.shortName}</text>
+                  <text x="${p.cx.toFixed(1)}" y="${baseY + 28}" text-anchor="middle" fill="#64748B" font-size="8.5" font-weight="bold">(${p.meta.grade})</text>
+                  <rect
+                    x="${(p.cx - 24).toFixed(1)}"
+                    y="${baseY + 34}"
+                    width="48"
+                    height="15"
+                    rx="3"
+                    fill="${p.row.actionVerdict === '제외 검토' ? '#D1FAE5' : p.row.actionVerdict === '유지' ? '#DBEAFE' : '#FEE2E2'}"
+                    stroke="${p.row.actionVerdict === '제외 검토' ? '#10B981' : p.row.actionVerdict === '유지' ? '#60A5FA' : '#F87171'}"
+                    stroke-width="1"
+                  />
+                  <text
+                    x="${p.cx.toFixed(1)}"
+                    y="${baseY + 45}"
+                    text-anchor="middle"
+                    fill="${p.row.actionVerdict === '제외 검토' ? '#065F46' : p.row.actionVerdict === '유지' ? '#1E40AF' : '#991B1B'}"
+                    font-size="8.5"
+                    font-weight="900"
+                  >${p.meta.tag}</text>
+                </g>
+              `).join('')}
+            </svg>
+          </div>
+        </div>
+      ` : activeMetric === 'ratio' ? `
+        <!-- 2. 모수 건수 및 구성비 상세 분포 뷰 -->
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            ${rows.map((row, idx) => {
+              const meta = segMeta[idx] || segMeta[0];
+              return `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                      <span class="w-3 h-3 rounded-full" style="background-color: ${meta.color};"></span>
+                      <span class="font-black text-xs text-slate-900">${row.groupName}</span>
+                    </div>
+                    <span class="text-[10px] font-black px-2 py-0.5 rounded ${meta.badgeBg}">
+                      ${meta.tag}
+                    </span>
+                  </div>
+
+                  <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs">
+                      <span class="text-slate-500 font-bold">차주 건수</span>
+                      <span class="font-mono font-black text-slate-800">${row.count.toLocaleString()}건 <span class="text-slate-400 font-normal">(${row.ratio.toFixed(2)}%)</span></span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                      <div class="h-2.5 rounded-full" style="width: ${(row.ratio / 35.0) * 100}%; background-color: ${meta.color};"></div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center justify-between pt-1 border-t border-slate-200 text-[11px] text-slate-600">
+                    <span>연체율: <strong class="font-mono text-slate-900">${row.delinquencyRate.toFixed(2)}%</strong></span>
+                    <span>손익: <strong class="font-mono ${row.profitContribution > 0 ? 'text-blue-700' : 'text-rose-600'}">${row.profitContribution > 0 ? `+${row.profitContribution.toFixed(2)}` : row.profitContribution.toFixed(2)}억</strong></span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : activeMetric === 'delinquency' ? `
+        <!-- 3. 연체율 위험도 프로파일 뷰 -->
+        <div class="space-y-3">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-black text-slate-800">심사등급별 연체율 급등 임계치 비교</span>
+              <span class="text-[11px] text-slate-500 font-bold">⚠️ 위험 기준선: 3.0% 이상</span>
+            </div>
+
+            <div class="space-y-3 pt-1">
+              ${rows.map((row, idx) => {
+                const meta = segMeta[idx] || segMeta[0];
+                const isHighRisk = row.delinquencyRate >= 3.0;
+                const isSafe = row.delinquencyRate < 1.0;
+                return `
+                  <div>
+                    <div class="flex justify-between items-center text-xs mb-1">
+                      <span class="flex items-center gap-1.5 font-bold text-slate-800">
+                        <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${meta.color};"></span>
+                        <span>${meta.shortName} (${meta.grade})</span>
+                      </span>
+                      <span class="font-mono font-black text-xs ${
+                        isHighRisk ? 'text-rose-600' : isSafe ? 'text-emerald-700' : 'text-blue-700'
+                      }">
+                        ${row.delinquencyRate.toFixed(2)}%
+                        <span class="text-[10px] font-normal text-slate-500">
+                          ${isSafe ? '(최상위 안전)' : isHighRisk ? '(부실 경보)' : '(정상 마진)'}
+                        </span>
+                      </span>
+                    </div>
+                    <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden relative">
+                      <!-- 3.0% 위험 임계선 표시 -->
+                      <div class="absolute top-0 bottom-0 left-[37.5%] w-0.5 bg-red-400 z-10" title="위험 기준선 (3.0%)"></div>
+                      <div
+                        class="h-3 rounded-full transition-all ${
+                          isHighRisk ? 'bg-gradient-to-r from-rose-500 to-rose-700' : isSafe ? 'bg-gradient-to-r from-emerald-400 to-emerald-600' : 'bg-gradient-to-r from-blue-400 to-blue-600'
+                        }"
+                        style="width: ${(row.delinquencyRate / 8.0) * 100}%;"
+                      ></div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      ` : `
+        <!-- 4. 손익 기여도 분석 뷰 -->
+        <div class="space-y-3">
+          <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+            <div class="flex items-center justify-between text-xs pb-2 border-b border-slate-200">
+              <span class="font-black text-slate-800">세그먼트별 순익 기여도 (흑자 vs 적자 구간)</span>
+              <span class="text-[11px] text-blue-700 font-bold">총 순익 기여 합계: +3.90억 원</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+              ${rows.map((row, idx) => {
+                const meta = segMeta[idx] || segMeta[0];
+                const isProfit = row.profitContribution > 0;
+                return `
+                  <div class="bg-white border ${isProfit ? 'border-blue-200' : 'border-rose-200'} rounded-xl p-3.5 space-y-2 shadow-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="font-black text-slate-800">${meta.shortName}</span>
+                      <span class="text-[10px] font-black px-1.5 py-0.5 rounded ${meta.badgeBg}">${meta.tag}</span>
+                    </div>
+                    <div class="text-center py-2">
+                      <span class="text-xl font-black font-mono ${isProfit ? 'text-blue-700' : 'text-rose-600'}">
+                        ${isProfit ? `+${row.profitContribution.toFixed(2)}` : row.profitContribution.toFixed(2)}억 원
+                      </span>
+                      <span class="block text-[11px] text-slate-500 mt-0.5">${row.note}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 flex justify-between pt-1 border-t border-slate-100">
+                      <span>모수: ${row.count.toLocaleString()}건</span>
+                      <span>연체율: ${row.delinquencyRate.toFixed(2)}%</span>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `}
+
+      <!-- 하단 의사결정 요약 카드 (영업기획팀 vs 신용관리팀 상호 협의 핵심 근거) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1 text-xs">
+        <div class="bg-emerald-50/90 border border-emerald-300 rounded-xl p-3 space-y-1">
+          <div class="flex items-center justify-between font-black text-emerald-950">
+            <span class="flex items-center gap-1">
+              <span>⭐</span>
+              <span>1~2등급 예외인정 근거</span>
+            </span>
+            <span class="text-[10px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-black">+1.45억 기여</span>
+          </div>
+          <p class="text-[11px] text-emerald-800 font-medium leading-relaxed">
+            모수 비중 0.95%(142건)로 극소하나 연체율 0.12%의 최우량 차주입니다. 일괄 부결 시 우량 고객 이탈 방지 효과가 입증됩니다.
+          </p>
+        </div>
+
+        <div class="bg-blue-50/90 border border-blue-300 rounded-xl p-3 space-y-1">
+          <div class="flex items-center justify-between font-black text-blue-950">
+            <span class="flex items-center gap-1">
+              <span>🟢</span>
+              <span>정상 승인 유지군 (3~4등급)</span>
+            </span>
+            <span class="text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-black">비중 43.9%</span>
+          </div>
+          <p class="text-[11px] text-blue-800 font-medium leading-relaxed">
+            총 6,500건으로 주력 영업 자산 기반입니다. 연체율 0.88%~1.64%로 건전성과 대출 취급 규모의 균형을 유지합니다.
+          </p>
+        </div>
+
+        <div class="bg-rose-50/90 border border-rose-300 rounded-xl p-3 space-y-1">
+          <div class="flex items-center justify-between font-black text-rose-950">
+            <span class="flex items-center gap-1">
+              <span>🛑</span>
+              <span>리스크 차단군 (5~7등급)</span>
+            </span>
+            <span class="text-[10px] bg-rose-200 text-rose-900 px-1.5 py-0.5 rounded font-black">부실 8,178건 차단</span>
+          </div>
+          <p class="text-[11px] text-rose-800 font-medium leading-relaxed">
+            연체율 급등(최대 7.80%) 및 손익 적자(-1.45억) 구간으로 신규 심사 통제를 통해 회사 자산 건전성을 선제 방어합니다.
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 // ========================================================
 // 2. 다자간 부서 협의 워크스페이스 (영업기획팀 · 신용관리팀 · 팀장 · 본부장 소통의 장)
 // ========================================================
@@ -3329,12 +3865,119 @@ function renderCollaborationScreen(strategy) {
   const canEditCredit = isCreditDept;
   const canFinalize = state.currentRoleId === 'CREDIT_STAFF'; // 신용관리팀 담당자(이신용 대리)만 최종안 책정 가능!
 
+  // 안건 접수 대기 상태 여부 (1단계 상정 후 상대방 부서 접수 전)
+  const isPendingReceipt = currentTask.stepNum === 1 || currentTask.status === 'submitted' || currentTask.status === 'pending_receipt';
+  
+  // 현재 접속자가 안건을 접수해야 하는 수신(배정) 부서인지 여부
+  const isAssignee = (currentTask.assigneeDept && currentTask.assigneeDept.includes('신용') && (state.currentRoleId === 'CREDIT_STAFF' || state.currentRoleId === 'CREDIT_LEADER')) ||
+                     (currentTask.assigneeDept && currentTask.assigneeDept.includes('영업') && state.currentRoleId === 'SALES_STAFF');
+  const isRequester = (currentTask.requesterDept && currentTask.requesterDept.includes('영업') && state.currentRoleId === 'SALES_STAFF') ||
+                      (currentTask.requesterDept && currentTask.requesterDept.includes('신용') && (state.currentRoleId === 'CREDIT_STAFF' || state.currentRoleId === 'CREDIT_LEADER'));
+
   return `
     <div class="space-y-6 w-full">
-      ${renderActiveTaskBanner('2단계: 다자간 부서 협의 (영업기획팀 vs 신용관리팀 안건 조율)')}
+      ${renderActiveTaskBanner(
+        isPendingReceipt
+          ? `1단계: 협의 안건 상정 완료 (상대방 부서 [${currentTask.assigneeDept || '수신부서'}] 접수 대기 중)`
+          : '2단계: 다자간 부서 협의 (영업기획팀 vs 신용관리팀 안건 조율)'
+      )}
+
+      <!-- [신규] 상대방 부서 접수 처리 대기/실행 배너 (접수 후 부서간 협의 시작 구조) -->
+      ${isPendingReceipt ? `
+        <div class="bg-gradient-to-r ${isAssignee ? 'from-blue-900 via-indigo-900 to-slate-900 border-blue-400' : 'from-slate-800 via-slate-900 to-slate-950 border-amber-400'} border-2 rounded-2xl p-6 text-white shadow-xl space-y-4 animate-fadeIn">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/20 pb-4">
+            <div class="flex items-center gap-3">
+              <span class="text-3xl ${isAssignee ? 'animate-bounce' : ''}">${isAssignee ? '📥' : '⏳'}</span>
+              <div>
+                <span class="text-[11px] font-black ${isAssignee ? 'bg-amber-400 text-slate-950' : 'bg-blue-400 text-slate-950'} px-3 py-1 rounded-full uppercase tracking-wider">
+                  ${isAssignee ? 'Action 필요: 안건 공식 접수 대기' : '상대방 부서 접수 처리 대기 중'}
+                </span>
+                <h3 class="text-xl font-black mt-1">
+                  ${isAssignee
+                    ? `[${currentTask.requesterDept} ${currentTask.requesterName}]에서 상정한 협의 안건이 도착했습니다!`
+                    : `[${currentTask.assigneeDept} ${currentTask.assigneeName}]의 안건 접수 처리를 대기하고 있습니다.`
+                  }
+                </h3>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-mono text-slate-300 block">안건 번호: ${currentTask.id}</span>
+              <span class="text-xs text-amber-300 font-bold">${currentTask.product || 'PL 신용대출 36개월물'}</span>
+            </div>
+          </div>
+
+          <!-- 안건 요약 박스 -->
+          <div class="bg-white/10 backdrop-blur-xs rounded-xl p-4 text-xs sm:text-sm leading-relaxed border border-white/15 space-y-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <p class="font-black text-white text-base">📌 건명: ${currentTask.title}</p>
+              <span class="text-xs font-mono text-blue-200">기안 일시: ${currentTask.requestDate || '2026-10-11 10:00'}</span>
+            </div>
+            <p class="text-slate-200 text-xs leading-normal">
+              ${isAssignee
+                ? `상대방 부서(${currentTask.requesterDept})에서 본 부서(${currentTask.assigneeDept})로 심사전략 협의를 공식 상정하였습니다. 아래 <strong>[📥 협의 안건 공식 접수 처리]</strong> 버튼을 누르면 AI 선행 분석 모듈이 가동되어 <strong>5대 최적 전략</strong>을 도출하고 본격적인 부서간 토의/시뮬레이션이 시작됩니다.`
+                : `현재 기안 부서(${currentTask.requesterDept})에서 안건을 상정한 상태입니다. 수신 부서(${currentTask.assigneeDept}) 담당자가 안건을 확인하고 접수 처리를 완료하면 양 부서간 실시간 핑퐁 및 AI What-If 시뮬레이션이 활성화됩니다.`
+              }
+            </p>
+          </div>
+
+          <!-- 액션 컨트롤러 -->
+          <div class="flex flex-col sm:flex-row items-center gap-3 pt-1">
+            ${isAssignee ? `
+              <button
+                type="button"
+                onclick="acceptTaskRequest('${currentTask.id}');"
+                class="w-full sm:flex-1 py-4 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-500 hover:to-amber-700 text-slate-950 font-black text-base rounded-xl shadow-2xl border-2 border-amber-300 flex items-center justify-center gap-2.5 transition-all transform active:scale-98"
+              >
+                <span class="text-xl">📥</span>
+                <span>협의 안건 공식 접수 처리 및 부서 협의 시작 (AI 5대안 탑재)</span>
+                <span class="text-xs bg-slate-950/20 px-2.5 py-1 rounded-lg font-bold">➔ 협의 개시</span>
+              </button>
+            ` : `
+              <div class="w-full sm:flex-1 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                <span class="text-xs text-slate-300 flex items-center gap-1.5">
+                  <span class="animate-spin text-base">⏳</span>
+                  <span>상대방 부서(${currentTask.assigneeDept})에서 안건을 검토 중입니다.</span>
+                </span>
+                <button
+                  type="button"
+                  onclick="switchRole('${currentTask.assigneeDept && currentTask.assigneeDept.includes('신용') ? 'CREDIT_STAFF' : 'SALES_STAFF'}');"
+                  class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-lg shadow-md border border-blue-400 flex items-center gap-2 transition-all"
+                >
+                  <span>🔄 상대방 부서(${currentTask.assigneeDept}) 계정으로 전환하여 접수하기</span>
+                </button>
+              </div>
+            `}
+          </div>
+        </div>
+      ` : ''}
+
+      <!-- 팀장/본부장 검토 및 의견 제시 전용 안내 바 -->
+      ${state.currentRoleId === 'CREDIT_LEADER' ? `
+        <div class="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">👔</span>
+            <div>
+              <span class="text-[11px] font-black bg-blue-600 text-white px-2.5 py-0.5 rounded-full">신용관리팀장 검토 모드</span>
+              <p class="text-xs font-bold text-blue-950 mt-1">현재 신용관리팀(이신용 대리)이 영업기획팀과 협의 중인 안건입니다. 하단 토의방에 팀장 검토 의견 및 조율 지시를 남겨주세요.</p>
+            </div>
+          </div>
+          <span class="text-xs font-black text-blue-700 bg-white px-3 py-1.5 rounded-xl border border-blue-200 shrink-0">💬 의견 제시 권한 활성화됨</span>
+        </div>
+      ` : state.currentRoleId === 'RISK_HEAD' ? `
+        <div class="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-400 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">👑</span>
+            <div>
+              <span class="text-[11px] font-black bg-purple-700 text-white px-2.5 py-0.5 rounded-full">신용관리본부장 종합 검토 모드</span>
+              <p class="text-xs font-bold text-purple-950 mt-1">영업기획팀과 신용관리팀의 합의 현황을 모니터링하고, 본부 차원의 종합 지시사항 및 승인 의견을 토의방에 남겨주세요.</p>
+            </div>
+          </div>
+          <span class="text-xs font-black text-purple-700 bg-white px-3 py-1.5 rounded-xl border border-purple-200 shrink-0">⭐ 본부 승인·지시 권한</span>
+        </div>
+      ` : ''}
 
       <!-- 1. 상단 협의 컨트롤 & AI 팝업 트리거 바 -->
-      <div class="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div class="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 ${isPendingReceipt ? 'opacity-85' : ''}">
         <div>
           <div class="flex items-center gap-2">
             <span class="text-xs font-black bg-[#EEF5FF] text-[#0565F0] px-3 py-1 rounded-full border border-[#D0E2FF]">부서간 협의 워크스페이스</span>
@@ -3712,23 +4355,8 @@ function renderCollaborationScreen(strategy) {
             </div>
           </div>
 
-          <!-- 통계적 유의성 및 백테스트 검증 요약 카드 -->
-          <div class="bg-white border-2 border-slate-300 rounded-2xl p-5 shadow-sm space-y-3">
-            <h5 class="text-sm font-black text-slate-900 flex items-center gap-2">
-              <span>📊 AI 리스크 엔진 모델 검증 요약</span>
-              <span class="text-[10px] bg-blue-100 text-[#0565F0] font-black px-2 py-0.5 rounded-full">전수 검증 완료</span>
-            </h5>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                <span class="font-bold text-slate-800 block">✓ OOT(Out-Of-Time) 백테스트 검증</span>
-                <p class="text-slate-600">2025Q4~2026Q1 표본 대상 예측 일치도 AUC 0.841 기록 (우수 등급 판정)</p>
-              </div>
-              <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
-                <span class="font-bold text-slate-800 block">✓ 단조성(Monotonicity) 검정</span>
-                <p class="text-slate-600">DTI 및 신용조회건수 증가에 따른 연체율 상승 단조 원칙 100% 정상 충족</p>
-              </div>
-            </div>
-          </div>
+          <!-- 분석 결과 SEG별 차주 분포 및 리스크 프로파일 그래프 카드 -->
+          ${renderSegDistributionChart()}
         </div>
 
         <!-- 우측 5열: 부서간 실시간 소통 및 토의방 (Discussion Room) -->
@@ -3788,15 +4416,31 @@ function renderCollaborationScreen(strategy) {
           <div class="pt-1 space-y-1.5">
             <span class="text-[11px] font-black text-slate-600 block">💡 빠른 협의 의견 제안:</span>
             <div class="flex flex-wrap gap-1.5 text-[11px]">
-              <button type="button" onclick="sendCollabComment('1~2등급 우량고객 예외 시 영업 취급액 방어에 큰 도움이 되므로 절충안을 적극 지지합니다.');" class="bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300 font-bold transition-colors text-left">
-                "1~2등급 예외 인정 시 영업 취급액 방어에 큰 도움"
-              </button>
-              <button type="button" onclick="sendCollabComment('OOT 백테스트 검증 결과 건전성 악화 위험이 없음을 확인하여 신용관리팀도 수용 가능합니다.');" class="bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300 font-bold transition-colors text-left">
-                "OOT 백테스트 통과로 건전성 영향 없음 확인"
-              </button>
-              <button type="button" onclick="sendCollabComment('연체율 -1.3%p 개선과 순익 +4.8억 원 확보는 매우 균형 잡힌 최적안이므로 최종 합의에 동의합니다.');" class="bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300 font-bold transition-colors text-left">
-                "연체율 -1.3%p 및 순익 +4.8억 최종 합의에 동의합니다"
-              </button>
+              ${state.currentRoleId === 'CREDIT_LEADER' ? `
+                <button type="button" onclick="sendCollabComment('팀장 검토 의견: 1~2등급 우량차주 예외 적용 시 부실 전이 영향이 없음을 확인했으므로 절충안 승인을 권고합니다.');" class="bg-blue-50 hover:bg-blue-100 text-blue-900 px-2.5 py-1 rounded-lg border border-blue-300 font-black transition-colors text-left shadow-2xs">
+                  👔 "팀장 검토: 우량차주 예외 절충안 승인 권고"
+                </button>
+                <button type="button" onclick="sendCollabComment('팀장 지시: 연체율 -1.3%p 방어 목표가 훼손되지 않는 선에서 영업기획팀과 조속히 최종안을 매듭지으세요.');" class="bg-blue-50 hover:bg-blue-100 text-blue-900 px-2.5 py-1 rounded-lg border border-blue-300 font-black transition-colors text-left shadow-2xs">
+                  📋 "팀장 지시: 연체율 -1.3%p 방어 유지하며 조속 매듭"
+                </button>
+              ` : state.currentRoleId === 'RISK_HEAD' ? `
+                <button type="button" onclick="sendCollabComment('본부장 지시: 건전성 선제 방어와 영업 취급 균형이 적절하므로, 합의된 내용으로 즉시 품의 상신 준비하세요.');" class="bg-purple-50 hover:bg-purple-100 text-purple-900 px-2.5 py-1 rounded-lg border border-purple-300 font-black transition-colors text-left shadow-2xs">
+                  👑 "본부장 지시: 균형 양호, 즉시 품의 상신 준비"
+                </button>
+                <button type="button" onclick="sendCollabComment('본부장 검토: OOT 백테스트 데이터가 충실히 뒷받침되었으므로 본 부서 협의안을 최종 승인합니다.');" class="bg-purple-50 hover:bg-purple-100 text-purple-900 px-2.5 py-1 rounded-lg border border-purple-300 font-black transition-colors text-left shadow-2xs">
+                  ⭐ "본부장 검토: OOT 검증 충실, 최종 승인"
+                </button>
+              ` : `
+                <button type="button" onclick="sendCollabComment('1~2등급 우량고객 예외 시 영업 취급액 방어에 큰 도움이 되므로 절충안을 적극 지지합니다.');" class="bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300 font-bold transition-colors text-left">
+                  "1~2등급 예외 인정 시 영업 취급액 방어에 큰 도움"
+                </button>
+                <button type="button" onclick="sendCollabComment('OOT 백테스트 검증 결과 건전성 악화 위험이 없음을 확인하여 신용관리팀도 수용 가능합니다.');" class="bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300 font-bold transition-colors text-left">
+                  "OOT 백테스트 통과로 건전성 영향 없음 확인"
+                </button>
+                <button type="button" onclick="sendCollabComment('연체율 -1.3%p 개선과 순익 +4.8억 원 확보는 매우 균형 잡힌 최적안이므로 최종 합의에 동의합니다.');" class="bg-slate-100 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-2.5 py-1 rounded-lg border border-slate-300 font-bold transition-colors text-left">
+                  "연체율 -1.3%p 및 순익 +4.8억 최종 합의에 동의합니다"
+                </button>
+              `}
             </div>
           </div>
 
@@ -3807,10 +4451,16 @@ function renderCollaborationScreen(strategy) {
               id="collab-comment-input"
               value="${state.collabCommentInput || ''}"
               oninput="state.collabCommentInput=this.value;"
-              placeholder="[${currentAccount.name}] 의견을 입력하여 토의방에 등록..."
+              placeholder="${
+                state.currentRoleId === 'CREDIT_LEADER'
+                  ? '[신용관리팀 박심사 팀장] 검토 의견 및 조율 지시사항을 입력하여 등록...'
+                  : state.currentRoleId === 'RISK_HEAD'
+                    ? '[신용관리본부 최본부장] 본부 검토의견 및 최종 승인 지시를 입력하여 등록...'
+                    : `[${currentAccount.name}] 의견을 입력하여 토의방에 등록...`
+              }"
               class="flex-1 bg-slate-50 border-2 border-slate-300 focus:border-[#0565F0] rounded-xl px-3.5 py-2.5 text-xs text-slate-900 placeholder-slate-400 font-medium focus:outline-none"
             />
-            <button type="submit" class="px-4 py-2.5 bg-[#0565F0] hover:bg-[#0452C7] text-white font-black text-xs rounded-xl shadow-md transition-all shrink-0">
+            <button type="submit" class="px-5 py-2.5 ${state.currentRoleId === 'RISK_HEAD' ? 'bg-purple-700 hover:bg-purple-800' : 'bg-[#0565F0] hover:bg-[#0452C7]'} text-white font-black text-xs rounded-xl shadow-md transition-all shrink-0">
               의견 등록
             </button>
           </form>
